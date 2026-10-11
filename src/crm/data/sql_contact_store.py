@@ -62,27 +62,17 @@ class SqlContactStore(AbstractContactStore):
 
     async def search_contacts(
         self,
-        *,
-        name: str | None = None,
         first_name: str | None = None,
         last_name: str | None = None,
         phone_number: str | None = None,
         notes: str | None = None,
-        google_docs_link: str | None = None,
     ) -> list[Contact]:
-        search_query = select(ContactsTable).order_by(ContactsTable.id)
-        for column, term in (
-            (ContactsTable.first_name + " " + ContactsTable.last_name, name),
-            (ContactsTable.first_name, first_name),
-            (ContactsTable.last_name, last_name),
-            (ContactsTable.phone_number, phone_number),
-            (ContactsTable.notes, notes),
-            (ContactsTable.google_docs_link, google_docs_link),
-        ):
-            if term is not None and term.strip():
-                search_query = search_query.where(
-                    column.icontains(term, autoescape=True)
-                )
+        search_query = select(ContactsTable).where(
+            ContactsTable.first_name == first_name,
+            ContactsTable.last_name == last_name,
+            ContactsTable.phone_number == phone_number
+            and ContactsTable.notes.contains(notes),
+        )
 
         async with self.session_maker() as session:
             res = await session.execute(search_query)

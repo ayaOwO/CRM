@@ -17,7 +17,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     url = make_url(get_settings().database_url)
     engine = create_async_engine(url)
     try:
-        engine = engine
         session_factory = async_sessionmaker(engine, expire_on_commit=False)
         app.state.contact_store = SqlContactStore(session_factory)
         yield
@@ -38,5 +37,6 @@ app.include_router(contacts.router)
 @app.get("/")
 async def root() -> dict[str, str]:
     return {"service": "crm"}
+
 
 add_scalar_reference(app)

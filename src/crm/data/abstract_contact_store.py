@@ -30,11 +30,9 @@ class AbstractContactStore(ABC):
     async def search_contacts(
         self,
         *,
-        name: str | None = None,
         first_name: str | None = None,
         last_name: str | None = None,
         phone_number: str | None = None,
         notes: str | None = None,
-        google_docs_link: str | None = None,
     ) -> list[Contact]:
         pass
