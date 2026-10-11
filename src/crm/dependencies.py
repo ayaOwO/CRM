@@ -9,7 +9,7 @@ from crm.models.settings import Settings
 
 
 @lru_cache
-def get_settings():
+def get_settings() -> Settings:
     return Settings()
 
 

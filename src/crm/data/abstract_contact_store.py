@@ -5,11 +5,17 @@ from crm.models.contacts import Contact, ContactCreate
 
 class AbstractContactStore(ABC):
     @abstractmethod
-    async def add_contact(self, contact: ContactCreate) -> None:
+    async def add_contact(self, contact: ContactCreate) -> Contact:
         pass
 
     @abstractmethod
-    async def delete_contact(self, contact_id: int) -> None:
+    async def delete_contact(self, contact_id: int) -> bool:
+        pass
+
+    @abstractmethod
+    async def replace_contact(
+        self, contact_id: int, contact: ContactCreate
+    ) -> Contact | None:
         pass
 
     @abstractmethod
@@ -21,5 +27,14 @@ class AbstractContactStore(ABC):
         pass
 
     @abstractmethod
-    async def search_contacts(self, term: str) -> list[Contact]:
+    async def search_contacts(
+        self,
+        *,
+        name: str | None = None,
+        first_name: str | None = None,
+        last_name: str | None = None,
+        phone_number: str | None = None,
+        notes: str | None = None,
+        google_docs_link: str | None = None,
+    ) -> list[Contact]:
         pass
