@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Unnamed" type="UvRunConfigurationType" factoryName="UvRunConfigurationType">
+  <configuration default="false" name="fastapi dev" type="UvRunConfigurationType" factoryName="UvRunConfigurationType">
     <option name="args">
       <list>
         <option value="dev" />
