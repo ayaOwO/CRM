@@ -65,17 +65,21 @@ class SqlContactStore(AbstractContactStore):
         self,
         first_name: str | None = None,
         last_name: str | None = None,
-        phone_number: str | None = None,
         notes: str | None = None,
     ) -> list[Contact]:
         search_query = select(ContactsTable).where(
-            ContactsTable.first_name == first_name,
-            ContactsTable.last_name == last_name,
-            ContactsTable.phone_number == phone_number
-            and ContactsTable.notes.contains(notes),
+            ContactsTable.first_name == first_name.strip()
+            if first_name and first_name.strip()
+            else True,
+            ContactsTable.last_name == last_name.strip()
+            if last_name and last_name.strip()
+            else True,
+            ContactsTable.notes.contains(notes.strip(), autoescape=True)
+            if notes and notes.strip()
+            else True,
         )
 
         async with self.session_maker() as session:
-            res = await session.execute(search_query)
+            res = await session.execute(search_query.order_by(ContactsTable.id))
 
         return [Contact.model_validate(contact) for contact in res.scalars()]

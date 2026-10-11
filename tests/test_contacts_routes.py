@@ -7,10 +7,12 @@ import httpx
 import logfire
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from crm.main import app
 from crm.models.orm.base import Base
+from crm.models.requests.appointment_create import AppointmentCreate
 from crm.models.settings import Settings
 
 
@@ -19,14 +21,25 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
         self.directory = TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         url = f"sqlite+aiosqlite:///{Path(self.directory.name) / 'contacts.db'}"
-        settings = Settings.model_validate({"STORAGE_DATABASE_URL": url})
+        settings = Settings(
+            database_url=url,
+            openai_endpoint="",
+            openai_model="",
+            logfire_environment="test",
+        )
         settings_patch = patch("crm.main.get_settings", return_value=settings)
         settings_patch.start()
         self.addCleanup(settings_patch.stop)
         self.lifespan = app.router.lifespan_context(app)
         await self.lifespan.__aenter__()
         self.addAsyncCleanup(self.lifespan.__aexit__, None, None, None)
-        async with app.state.engine.begin() as connection:
+        engine = app.state.session_factory.kw["bind"]
+
+        @event.listens_for(engine.sync_engine, "connect")
+        def enable_foreign_keys(connection, _):
+            connection.execute("PRAGMA foreign_keys=ON")
+
+        async with engine.begin() as connection:
             await connection.run_sync(Base.metadata.create_all)
         self.client = httpx.AsyncClient(
             transport=httpx.ASGITransport(app=app), base_url="http://test"
@@ -97,18 +110,19 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
         )
         saved = [(await self.client.post("/contacts", json=p)).json() for p in payloads]
         cases = (
-            ({"first_name": "AD", "last_name": "LOVE"}, [saved[0]]),
-            ({"first_name": "ada", "last_name": "hopper"}, []),
-            ({"phone_number": "+972"}, [saved[0]]),
+            ({"first_name": "Ada"}, [saved[0], saved[1]]),
+            ({"last_name": "Lovelace"}, [saved[0]]),
+            ({"first_name": "Ada", "last_name": "Lovelace"}, [saved[0]]),
+            ({"first_name": "Ad"}, []),
+            ({"first_name": "Ada", "last_name": "Hopper"}, []),
             ({"notes": "%"}, [saved[0]]),
             ({"notes": "_"}, [saved[0]]),
-            ({"notes": "with/SLASH"}, [saved[0]]),
-            ({"google_docs_link": "DOCS.google"}, [saved[0]]),
+            ({"notes": "with/slash"}, [saved[0]]),
             (
                 {
                     "notes": "%",
-                    "phone_number": "050",
-                    "google_docs_link": "alpha",
+                    "first_name": "Ada",
+                    "last_name": "Lovelace",
                 },
                 [saved[0]],
             ),
@@ -117,8 +131,6 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
                     "first_name": "  ",
                     "last_name": "\t",
                     "notes": "\n",
-                    "phone_number": " ",
-                    "google_docs_link": "",
                 },
                 saved,
             ),
@@ -130,9 +142,45 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.json(), expected)
 
-    async def test_postgresql_driver_and_shutdown(self):
-        settings = Settings.model_validate(
-            {"STORAGE_DATABASE_URL": "postgresql://unused:unused@localhost/unused"}
+    async def test_search_parameters(self):
+        parameters = app.openapi()["paths"]["/contacts"]["get"]["parameters"]
+        self.assertEqual(
+            {parameter["name"] for parameter in parameters},
+            {"first_name", "last_name", "notes"},
+        )
+
+    async def test_linked_client_deletion_conflict(self):
+        contact = (
+            await self.client.post(
+                "/contacts", json={"first_name": "Test", "last_name": "Client"}
+            )
+        ).json()
+        appointment = await app.state.appointment_store.add_appointment(
+            AppointmentCreate.model_validate(
+                {
+                    "guests": [contact["id"]],
+                    "location": "Office",
+                    "start_time": "2026-10-11T09:00:00Z",
+                    "end_time": "2026-10-11T10:00:00Z",
+                }
+            )
+        )
+        response = await self.client.delete(f"/contacts/{contact['id']}")
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(
+            (await self.client.get(f"/contacts/{contact['id']}")).status_code, 200
+        )
+        await app.state.appointment_store.delete_appointment(appointment.id)
+        self.assertEqual(
+            (await self.client.delete(f"/contacts/{contact['id']}")).status_code, 204
+        )
+
+    async def test_engine_configuration_and_shutdown(self):
+        settings = Settings(
+            database_url="postgresql+psycopg://unused:unused@localhost/unused",
+            openai_endpoint="",
+            openai_model="",
+            logfire_environment="test",
         )
         engine = create_async_engine("sqlite+aiosqlite:///:memory:")
         with (

@@ -32,7 +32,6 @@ class AbstractContactStore(ABC):
         self,
         first_name: str | None = None,
         last_name: str | None = None,
-        phone_number: str | None = None,
         notes: str | None = None,
     ) -> list[Contact]:
         pass
