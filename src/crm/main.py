@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 import logfire
 from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
 from scalar_fastapi import add_scalar_reference
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -36,6 +37,13 @@ logfire.instrument_system_metrics()
 
 app.include_router(contacts.router)
 app.include_router(appointments.router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_allowed_origins,
+    allow_methods=["*"],
+    allow_credentials=True,
+)
 
 
 @app.head("/")
