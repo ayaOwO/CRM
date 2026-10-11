@@ -1,0 +1,22 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Unnamed" type="UvRunConfigurationType" factoryName="UvRunConfigurationType">
+    <option name="args">
+      <list>
+        <option value="dev" />
+        <option value="./src/crm/main.py" />
+      </list>
+    </option>
+    <option name="checkSync" value="true" />
+    <option name="debugJustMyCode" value="false" />
+    <option name="env">
+      <map />
+    </option>
+    <option name="runType" value="MODULE" />
+    <option name="scriptOrModule" value="fastapi" />
+    <option name="uvArgs">
+      <list />
+    </option>
+    <option name="uvSdkKey" value="~/Documents/repos/CRM/.venv" />
+    <method v="2" />
+  </configuration>
+</component>
