@@ -1,7 +1,7 @@
 """Create contacts table.
 
 Revision ID: 419102264a5a
-Revises: init contacts table
+Revises:
 Create Date: 2026-10-11 17:15:40.722521
 
 """
