@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    {
+      "source": "/contacts",
+      "destination": "https://YOUR-BACKEND.example/contacts"
+    },
+    {
+      "source": "/contacts/:path*",
+      "destination": "https://YOUR-BACKEND.example/contacts/:path*"
+    },
+    {
+      "source": "/appointments",
+      "destination": "https://YOUR-BACKEND.example/appointments"
+    },
+    {
+      "source": "/appointments/:path*",
+      "destination": "https://YOUR-BACKEND.example/appointments/:path*"
+    }
+  ]
+}

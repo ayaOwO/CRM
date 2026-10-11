@@ -12,3 +12,7 @@ wheels/
 .env
 .vercel/
 .logfire/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
