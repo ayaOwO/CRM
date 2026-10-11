@@ -30,7 +30,6 @@ class AbstractContactStore(ABC):
     @abstractmethod
     async def search_contacts(
         self,
-        *,
         first_name: str | None = None,
         last_name: str | None = None,
         phone_number: str | None = None,

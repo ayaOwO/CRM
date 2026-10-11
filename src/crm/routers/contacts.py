@@ -19,7 +19,6 @@ async def create_contact(contact: ContactCreate, store: ContactStore) -> Contact
 @router.get("")
 async def list_contacts(
     store: ContactStore,
-    name: str | None = None,
     first_name: str | None = None,
     last_name: str | None = None,
     phone_number: str | None = None,
@@ -27,7 +26,6 @@ async def list_contacts(
     google_docs_link: str | None = None,
 ) -> list[Contact]:
     return await store.search_contacts(
-        name=name,
         first_name=first_name,
         last_name=last_name,
         phone_number=phone_number,

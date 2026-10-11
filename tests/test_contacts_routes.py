@@ -97,8 +97,6 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
         )
         saved = [(await self.client.post("/contacts", json=p)).json() for p in payloads]
         cases = (
-            ({"name": "a LoVe"}, [saved[0]]),
-            ({"name": "ada"}, saved[:2]),
             ({"first_name": "AD", "last_name": "LOVE"}, [saved[0]]),
             ({"first_name": "ada", "last_name": "hopper"}, []),
             ({"phone_number": "+972"}, [saved[0]]),
@@ -108,7 +106,6 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
             ({"google_docs_link": "DOCS.google"}, [saved[0]]),
             (
                 {
-                    "name": "ada",
                     "notes": "%",
                     "phone_number": "050",
                     "google_docs_link": "alpha",
@@ -117,7 +114,6 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
             ),
             (
                 {
-                    "name": "",
                     "first_name": "  ",
                     "last_name": "\t",
                     "notes": "\n",

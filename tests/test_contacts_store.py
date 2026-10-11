@@ -35,7 +35,6 @@ class ContactStoreTest(unittest.IsolatedAsyncioTestCase):
                 ("first_name", "ADA"),
                 ("last_name", "lovelace"),
                 ("google_docs_link", "docs.google.com"),
-                ("name", "ada lovelace"),
             ):
                 self.assertEqual(await store.search_contacts(**{field: term}), [saved])
             self.assertEqual(await store.search_contacts(notes="_"), [])
