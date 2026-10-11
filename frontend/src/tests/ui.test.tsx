@@ -13,6 +13,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import CalendarView from "../views/CalendarView";
 import SettingsDialog from "../components/dialogs/SettingsDialog";
 import { createAppTheme, defaultThemeColor } from "../theme";
+import App from "../app/App";
 
 const calendarRender = vi.hoisted(() => vi.fn());
 vi.mock(
@@ -32,6 +33,21 @@ vi.mock(
 );
 
 describe("MUI interface", () => {
+  it("renders the app shell and dashboard through the extracted hooks", () => {
+    const html = renderToStaticMarkup(
+      <ThemeProvider theme={createAppTheme(defaultThemeColor)}>
+        <App
+          themeColor={defaultThemeColor}
+          onThemeColorChange={vi.fn()}
+          themeSaveError={false}
+        />
+      </ThemeProvider>,
+    );
+    expect(html).toContain("ניווט ראשי");
+    expect(html).toContain("טוענים נתונים");
+    expect(html).toContain("פגישות בשבוע הנבחר");
+    expect(html).toContain("מטופלים בקליניקה");
+  });
   it("renders FullCalendar with an appointment, time, location, and Hebrew toolbar", () => {
     const anchor = new Date(2026, 9, 11, 10);
     const setAnchor = vi.fn();

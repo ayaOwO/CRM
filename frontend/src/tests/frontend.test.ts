@@ -7,6 +7,7 @@ import {
   meetingDurationPresets,
   meetingEnd,
   defaultMeetingStart,
+  appointmentRange,
 } from "../lib/calendar";
 import { matchesContactName, safeLink } from "../lib/contacts";
 import type { Appointment, Contact } from "../types";
@@ -99,6 +100,20 @@ describe("client name search", () => {
   });
 });
 describe("calendar and link boundaries", () => {
+  it("loads the selected week in day view and the full grid in month view", () => {
+    const anchor = new Date(2026, 9, 14, 12);
+    const start = weekStart(anchor);
+    const end = shiftDay(start, 7);
+    expect(appointmentRange(anchor, null)).toEqual([start, end]);
+    expect(
+      appointmentRange(anchor, [shiftDay(start, 3), shiftDay(start, 4)]),
+    ).toEqual([start, end]);
+    const monthRange: [Date, Date] = [
+      new Date(2026, 8, 27),
+      new Date(2026, 10, 8),
+    ];
+    expect(appointmentRange(anchor, monthRange)).toEqual(monthRange);
+  });
   it("defaults to 10am for 90 minutes and supports custom positive whole minutes", () => {
     const day = new Date(2026, 9, 11, 16, 42);
     const start = defaultMeetingStart(day);

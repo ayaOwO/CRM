@@ -44,7 +44,9 @@ Month navigation loads the entire displayed date range, including adjacent-month
 
 ## Frontend organization
 
-- `src/App.tsx`: state, data loading, and save/delete handlers.
+- `src/main.tsx`: React entrypoint.
+- `src/app/`: providers, page navigation, and dialog wiring.
+- `src/hooks/`: CRM data/history loading and form save/delete handlers.
 - `src/views/`: dashboard, clients, and FullCalendar views.
 - `src/components/`: shared components and dialogs.
 - `src/lib/`: API transport, contact helpers, and calendar utilities.

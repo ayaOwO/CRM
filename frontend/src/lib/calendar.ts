@@ -26,6 +26,19 @@ export function shiftDay(date: Date, days: number) {
   d.setDate(d.getDate() + days);
   return d;
 }
+export function appointmentRange(
+  anchor: Date,
+  visibleRange: [Date, Date] | null,
+): [Date, Date] {
+  const start = weekStart(anchor);
+  const end = shiftDay(start, 7);
+  if (!visibleRange) return [start, end];
+  // The dashboard needs the selected week even in the calendar's day view.
+  return [
+    new Date(Math.min(+start, +visibleRange[0])),
+    new Date(Math.max(+end, +visibleRange[1])),
+  ];
+}
 const timeFormat = new Intl.DateTimeFormat("he-IL", {
   hour: "2-digit",
   minute: "2-digit",
