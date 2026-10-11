@@ -10,16 +10,13 @@ from crm.models.requests.contact_update import ContactUpdate
 
 class SqlContactStore(AbstractContactStore):
     def __init__(self, session_maker: async_sessionmaker[AsyncSession]):
-        super().__init__()
         self.session_maker = session_maker
 
     async def add_contact(self, contact: ContactCreate) -> Contact:
         async with self.session_maker() as session:
             insert_contact = (
                 insert(ContactsTable)
-                .values(
-                    **contact.model_dump(),
-                )
+                .values(**contact.model_dump())
                 .returning(ContactsTable)
             )
             saved = Contact.model_validate(
