@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import "./CalendarView.css";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import ButtonBase from "@mui/material/ButtonBase";
 import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
@@ -60,7 +61,7 @@ export default function CalendarView({
             {shortDayFormat.format(shiftDay(start, 6))}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            אזור זמן: <bdi>{timezone}</bdi>
+            אזור זמן: <Box component="bdi">{timezone}</Box>
           </Typography>
         </Box>
         <Stack direction="row" spacing={1} alignItems="center">
@@ -134,7 +135,13 @@ export default function CalendarView({
             ))}
             <Box className="time-column">
               {Array.from({ length: 24 }, (_, h) => (
-                <div key={h}>{String(h).padStart(2, "0")}:00</div>
+                <Typography
+                  key={h}
+                  component="div"
+                  sx={{ height: 64, pt: "5px", fontSize: "inherit" }}
+                >
+                  {String(h).padStart(2, "0")}:00
+                </Typography>
               ))}
             </Box>
             {activeDays.map((d) => (
@@ -143,8 +150,17 @@ export default function CalendarView({
                 key={d.toISOString()}
               >
                 {Array.from({ length: 24 }, (_, h) => (
-                  <button
-                    className="time-slot"
+                  <ButtonBase
+                    sx={{
+                      display: "block",
+                      width: "100%",
+                      height: 64,
+                      borderBottom: 1,
+                      borderColor: "divider",
+                      "&:hover, &.Mui-focusVisible": {
+                        bgcolor: "action.hover",
+                      },
+                    }}
                     key={h}
                     aria-label={`פגישה חדשה ${shortDayFormat.format(d)} ${h}:00`}
                     onClick={() => {
@@ -164,11 +180,29 @@ export default function CalendarView({
                         ? 1440
                         : end.getHours() * 60 + end.getMinutes();
                     return (
-                      <button
-                        className="calendar-event"
+                      <ButtonBase
                         key={a.id}
                         onClick={() => editAppointment(a)}
-                        style={{
+                        sx={{
+                          position: "absolute",
+                          display: "block",
+                          border: 1,
+                          borderColor: "primary.light",
+                          borderInlineStart: "3px solid",
+                          borderInlineStartColor: "primary.main",
+                          borderRadius: "6px",
+                          bgcolor: "primary.light",
+                          color: "primary.dark",
+                          textAlign: "start",
+                          p: 0.5,
+                          overflow: "hidden",
+                          fontSize: 11,
+                          zIndex: 1,
+                          "&.Mui-focusVisible": {
+                            outline: "2px solid",
+                            outlineColor: "primary.main",
+                            zIndex: 2,
+                          },
                           top: (minutes / 60) * 64,
                           height: Math.max(
                             22,
@@ -179,12 +213,32 @@ export default function CalendarView({
                         }}
                         title={`${guests(a)} · ${time(a.start_time)}–${time(a.end_time)} · ${a.location}`}
                       >
-                        <strong>{guests(a)}</strong>
-                        <span dir="ltr">
+                        <Typography
+                          component="strong"
+                          variant="inherit"
+                          noWrap
+                          sx={{ display: "block", fontWeight: 700 }}
+                        >
+                          {guests(a)}
+                        </Typography>
+                        <Typography
+                          component="span"
+                          variant="inherit"
+                          noWrap
+                          dir="ltr"
+                          sx={{ display: "block" }}
+                        >
                           {time(a.start_time)}–{time(a.end_time)}
-                        </span>
-                        <span>{a.location}</span>
-                      </button>
+                        </Typography>
+                        <Typography
+                          component="span"
+                          variant="inherit"
+                          noWrap
+                          sx={{ display: "block" }}
+                        >
+                          {a.location}
+                        </Typography>
+                      </ButtonBase>
                     );
                   },
                 )}

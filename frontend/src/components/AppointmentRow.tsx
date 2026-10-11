@@ -18,7 +18,14 @@ export default function AppointmentRow({
     <Button className="appointment-row" fullWidth onClick={() => onEdit(a)}>
       <Box className="appointment-time" dir="ltr">
         {time(a.start_time)}
-        <small>{time(a.end_time)}</small>
+        <Typography
+          component="small"
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", fontWeight: 400 }}
+        >
+          {time(a.end_time)}
+        </Typography>
       </Box>
       <Box sx={{ flex: 1, textAlign: "start" }}>
         <Typography fontWeight={700}>{label}</Typography>

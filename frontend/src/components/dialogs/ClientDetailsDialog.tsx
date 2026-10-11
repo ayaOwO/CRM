@@ -57,7 +57,8 @@ export default function ClientDetailsDialog({
         {detail && (
           <Stack spacing={2}>
             <Typography color="text.secondary">
-              טלפון: <bdi>{detail.phone_number || "לא הוזן"}</bdi>
+              טלפון:{" "}
+              <Box component="bdi">{detail.phone_number || "לא הוזן"}</Box>
             </Typography>
             <Typography sx={{ whiteSpace: "pre-wrap" }}>
               {detail.notes || "לא נוספו הערות"}

@@ -39,11 +39,6 @@ body {
   width: 62px;
   font-weight: 700;
 }
-.appointment-time small {
-  display: block;
-  color: var(--mui-palette-text-secondary);
-  font-weight: 400;
-}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -161,7 +161,8 @@ export default function AppointmentDialog({
                   }}
                 />
                 <Typography variant="caption" color="text.secondary">
-                  השעות לפי <bdi>{timezone}</bdi>. פגישות חופפות מותרות.
+                  השעות לפי <Box component="bdi">{timezone}</Box>. פגישות חופפות
+                  מותרות.
                 </Typography>
               </>
             )}
