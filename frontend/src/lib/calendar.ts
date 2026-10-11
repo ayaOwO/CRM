@@ -1,5 +1,18 @@
 import type { Appointment } from "../types";
 
+// Move these presets to configuration when meeting settings are added.
+export const meetingDurationPresets = [90, 15] as const;
+export function defaultMeetingStart(day = new Date()) {
+  const start = new Date(day);
+  start.setHours(10, 0, 0, 0);
+  return start;
+}
+export function meetingEnd(start: string, minutes: number) {
+  if (!Number.isInteger(minutes) || minutes <= 0) return "";
+  const end = new Date(+new Date(start) + minutes * 60_000);
+  return Number.isFinite(+end) ? end.toISOString() : "";
+}
+
 export function dateInput(date: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;

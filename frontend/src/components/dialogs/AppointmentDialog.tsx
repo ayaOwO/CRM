@@ -11,7 +11,12 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import DeleteOutline from "@mui/icons-material/DeleteOutline";
-import { dateInput, timezone } from "../../lib/calendar";
+import {
+  dateInput,
+  timezone,
+  meetingDurationPresets,
+  meetingEnd,
+} from "../../lib/calendar";
 import { fullName } from "../../lib/contacts";
 import type {
   Appointment,
@@ -39,6 +44,8 @@ export default function AppointmentDialog({
   askDelete: (kind: DeletionTarget["kind"], id: number, label: string) => void;
   guests: (appointment: Pick<Appointment, "guests">) => string;
 }) {
+  const durationMinutes =
+    appointmentDraft?.durationMinutes ?? meetingDurationPresets[0];
   return (
     <Dialog
       open={!!appointmentDraft}
@@ -103,28 +110,55 @@ export default function AppointmentDialog({
                     setAppointmentDraft({
                       ...appointmentDraft,
                       start_time: e.target.value,
+                      end_time: meetingEnd(e.target.value, durationMinutes),
                     })
                   }
                 />
+                <Stack direction="row" spacing={1}>
+                  {meetingDurationPresets.map((minutes) => (
+                    <Button
+                      key={minutes}
+                      variant={
+                        durationMinutes === minutes ? "contained" : "outlined"
+                      }
+                      aria-pressed={durationMinutes === minutes}
+                      onClick={() => {
+                        setAppointmentDraft({
+                          ...appointmentDraft,
+                          durationMinutes: minutes,
+                          end_time: meetingEnd(
+                            appointmentDraft.start_time,
+                            minutes,
+                          ),
+                        });
+                      }}
+                    >
+                      {minutes} דקות
+                    </Button>
+                  ))}
+                </Stack>
                 <TextField
                   required
-                  type="datetime-local"
-                  label="סיום הפגישה"
+                  type="number"
+                  label="משך הפגישה בדקות"
                   slotProps={{
-                    inputLabel: { shrink: true },
-                    htmlInput: { dir: "ltr" },
+                    htmlInput: { dir: "ltr", min: 1, step: 1 },
                   }}
                   value={
-                    Number.isFinite(+new Date(appointmentDraft.end_time))
-                      ? dateInput(new Date(appointmentDraft.end_time))
-                      : ""
+                    Number.isFinite(durationMinutes) ? durationMinutes : ""
                   }
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const minutes =
+                      e.target.value === "" ? NaN : Number(e.target.value);
                     setAppointmentDraft({
                       ...appointmentDraft,
-                      end_time: e.target.value,
-                    })
-                  }
+                      durationMinutes: minutes,
+                      end_time: meetingEnd(
+                        appointmentDraft.start_time,
+                        minutes,
+                      ),
+                    });
+                  }}
                 />
                 <Typography variant="caption" color="text.secondary">
                   השעות לפי <bdi>{timezone}</bdi>. פגישות חופפות מותרות.

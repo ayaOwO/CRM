@@ -17,7 +17,10 @@ export interface Appointment {
 
 export type Page = "home" | "clients" | "calendar";
 export type ContactDraft = Omit<Contact, "id" | "created_at"> & { id?: number };
-export type AppointmentDraft = Omit<Appointment, "id"> & { id?: number };
+export type AppointmentDraft = Omit<Appointment, "id"> & {
+  id?: number;
+  durationMinutes?: number;
+};
 export interface DeletionTarget {
   kind: "contacts" | "appointments";
   id: number;

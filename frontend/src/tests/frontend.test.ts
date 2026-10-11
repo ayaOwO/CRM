@@ -1,6 +1,14 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { api } from "../lib/api";
-import { dateInput, layoutEvents, shiftDay, weekStart } from "../lib/calendar";
+import {
+  dateInput,
+  layoutEvents,
+  shiftDay,
+  weekStart,
+  meetingDurationPresets,
+  meetingEnd,
+  defaultMeetingStart,
+} from "../lib/calendar";
 import { matchesContactName, safeLink } from "../lib/contacts";
 import type { Appointment, Contact } from "../types";
 function event(id: number, start: Date, end: Date): Appointment {
@@ -39,6 +47,30 @@ describe("client name search", () => {
   });
 });
 describe("calendar and link boundaries", () => {
+  it("defaults to 10am for 90 minutes and supports custom positive whole minutes", () => {
+    const day = new Date(2026, 9, 11, 16, 42);
+    const start = defaultMeetingStart(day);
+    expect(dateInput(start)).toBe("2026-10-11T10:00");
+    expect(
+      dateInput(
+        new Date(meetingEnd(start.toISOString(), meetingDurationPresets[0])),
+      ),
+    ).toBe("2026-10-11T11:30");
+    expect(dateInput(new Date(meetingEnd(start.toISOString(), 37)))).toBe(
+      "2026-10-11T10:37",
+    );
+    expect(day.getHours()).toBe(16);
+    for (const minutes of [0, -15, 1.5, NaN, Infinity]) {
+      expect(meetingEnd(start.toISOString(), minutes)).toBe("");
+    }
+  });
+  it("calculates preset meeting lengths across midnight and handles a cleared start", () => {
+    const start = "2026-10-11T23:45:00+03:00";
+    expect(
+      meetingDurationPresets.map((minutes) => meetingEnd(start, minutes)),
+    ).toEqual(["2026-10-11T22:15:00.000Z", "2026-10-11T21:00:00.000Z"]);
+    expect(meetingEnd("", 90)).toBe("");
+  });
   it("starts Sunday and preserves local calendar dates", () => {
     const day = new Date(2026, 9, 14, 12);
     const start = weekStart(day);

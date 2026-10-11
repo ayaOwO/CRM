@@ -113,7 +113,7 @@ export default function CalendarView({
             startIcon={<Add />}
             onClick={() => {
               const slot = new Date(anchor);
-              slot.setHours(9, 0, 0, 0);
+              slot.setHours(10, 0, 0, 0);
               editAppointment(undefined, slot);
             }}
           >

@@ -16,7 +16,13 @@ import DashboardView from "./views/DashboardView";
 import ClientsView from "./views/ClientsView";
 import CalendarView from "./views/CalendarView";
 import { api, errorText } from "./lib/api";
-import { weekStart, shiftDay } from "./lib/calendar";
+import {
+  weekStart,
+  shiftDay,
+  meetingDurationPresets,
+  meetingEnd,
+  defaultMeetingStart,
+} from "./lib/calendar";
 import { fullName, safeLink } from "./lib/contacts";
 import type {
   Appointment,
@@ -129,20 +135,27 @@ export default function App() {
     setFormError("");
     setContactDraft(c ? { ...c } : { ...blankContact });
   }
-  function editAppointment(a?: Appointment, slot = new Date()) {
+  function editAppointment(a?: Appointment, slot?: Date) {
     setFormError("");
+    slot = new Date(slot ?? defaultMeetingStart());
     if (!a) {
       slot = new Date(slot);
       slot.setMinutes(0, 0, 0);
     }
     setAppointmentDraft(
       a
-        ? { ...a, guests: [...a.guests] }
+        ? {
+            ...a,
+            guests: [...a.guests],
+            durationMinutes:
+              (+new Date(a.end_time) - +new Date(a.start_time)) / 60_000,
+          }
         : {
             guests: [],
             location: "",
             start_time: slot.toISOString(),
-            end_time: new Date(+slot + 60 * 60 * 1000).toISOString(),
+            durationMinutes: meetingDurationPresets[0],
+            end_time: meetingEnd(slot.toISOString(), meetingDurationPresets[0]),
           },
     );
   }
@@ -199,16 +212,21 @@ export default function App() {
     if (!appointmentDraft || busy) return;
     setBusy(true);
     setFormError("");
-    const { id, guests, location, start_time, end_time } = appointmentDraft;
+    const { id, guests, location, start_time, durationMinutes } =
+      appointmentDraft;
     const begin = new Date(start_time),
-      end = new Date(end_time);
+      end = new Date(
+        meetingEnd(start_time, durationMinutes ?? meetingDurationPresets[0]),
+      );
     if (
       !location.trim() ||
       !Number.isFinite(+begin) ||
       !Number.isFinite(+end) ||
       end <= begin
     ) {
-      setFormError("יש להזין מיקום ושעת סיום מאוחרת משעת ההתחלה.");
+      setFormError(
+        "יש להזין מיקום, שעת התחלה ומשך פגישה בדקות שלמות וחיוביות.",
+      );
       setBusy(false);
       return;
     }
