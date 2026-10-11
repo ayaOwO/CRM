@@ -27,12 +27,34 @@ same local API proxy. Upload `dist/` to a static host for deployment. No
 Node server or Python static-file mount is required. Frontend navigation
 uses local state rather than path routing, so an SPA fallback is unnecessary.
 
+## Separate Render subdomains
+
+For a frontend and API on different `*.onrender.com` subdomains, set
+`VITE_API_BASE_URL=https://YOUR-API.onrender.com` in the static site environment
+before building. Rebuild after changing it. Allow the exact frontend origin
+in the backend CORS configuration. These are separate origins even though
+they share the `onrender.com` suffix. This value is public; keep secrets
+out of frontend environment variables.
+
+## Frontend organization
+
+- `src/App.tsx`: state, data loading, and save/delete handlers.
+- `src/views/`: dashboard, clients, and calendar views with their CSS.
+- `src/components/`: shared components and dialogs.
+- `src/lib/`: API transport, contact helpers, and calendar utilities.
+- `src/types.ts`: shared data types.
+- `src/theme/` and `src/styles/`: MUI theme and shared layout styles.
+- `src/tests/`: frontend utility and API tests.
+
+Run `npm run format` to format frontend files, or `npm run format:check`
+to check formatting without changing files.
+
 ## Same-domain static hosting
 
 Keep `VITE_API_BASE_URL` unset. The static host must proxy these API paths,
 including their query strings and POST/PUT/PATCH/DELETE methods, to your
 separately running backend. Browser requests then remain same-origin.
-There are no CORS changes in the backend.
+This proxy setup does not require browser CORS access to the backend.
 
 ### Vercel
 
@@ -53,11 +75,11 @@ Uses [Render static-site rewrite rules](https://render.com/docs/redirects-rewrit
   `npm ci && npm run build`, and publish directory `dist`.
 - Configure these four **Rewrite** rules in the static site's Redirects/Rewrites:
 
-| Source | Destination |
-| --- | --- |
-| `/contacts` | `https://YOUR-BACKEND.example/contacts` |
-| `/contacts/*` | `https://YOUR-BACKEND.example/contacts/*` |
-| `/appointments` | `https://YOUR-BACKEND.example/appointments` |
+| Source            | Destination                                   |
+| ----------------- | --------------------------------------------- |
+| `/contacts`       | `https://YOUR-BACKEND.example/contacts`       |
+| `/contacts/*`     | `https://YOUR-BACKEND.example/contacts/*`     |
+| `/appointments`   | `https://YOUR-BACKEND.example/appointments`   |
 | `/appointments/*` | `https://YOUR-BACKEND.example/appointments/*` |
 
 Replace the backend origin and verify list/create/edit/delete through the
@@ -67,7 +89,7 @@ If a host cannot proxy external API requests, place a reverse proxy in
 front of the static host and backend to retain one public domain. An
 alternative is a separate API origin configured through
 `VITE_API_BASE_URL` at build time; that requires an explicit backend CORS
-allowlist and is outside the current same-domain setup. Frontend environment
+allowlist as described above. Frontend environment
 variables are public: never put secrets in them.
 
 ## What works

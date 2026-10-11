@@ -1,13 +1,8 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import {
-  api,
-  dateInput,
-  layoutEvents,
-  safeLink,
-  shiftDay,
-  weekStart,
-} from "./api";
-import type { Appointment } from "./api";
+import { api } from "../lib/api";
+import { dateInput, layoutEvents, shiftDay, weekStart } from "../lib/calendar";
+import { matchesContactName, safeLink } from "../lib/contacts";
+import type { Appointment, Contact } from "../types";
 function event(id: number, start: Date, end: Date): Appointment {
   return {
     id,
@@ -23,6 +18,26 @@ const hour = (date: Date, h: number) => {
   return d;
 };
 afterEach(() => vi.unstubAllGlobals());
+describe("client name search", () => {
+  const contact: Contact = {
+    id: 1,
+    first_name: "Ada",
+    last_name: "Lovelace",
+    phone_number: "0501234567",
+    notes: null,
+    google_docs_link: null,
+    created_at: "2026-10-11T00:00:00Z",
+  };
+  it("matches first name, last name, and full name", () => {
+    for (const search of ["ada", " LOVE ", "Ada Lovelace", ""]) {
+      expect(matchesContactName(contact, search)).toBe(true);
+    }
+  });
+  it("does not match phone numbers", () => {
+    expect(matchesContactName(contact, "050123")).toBe(false);
+    expect(matchesContactName(contact, "0501234567")).toBe(false);
+  });
+});
 describe("calendar and link boundaries", () => {
   it("starts Sunday and preserves local calendar dates", () => {
     const day = new Date(2026, 9, 14, 12);

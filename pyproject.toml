@@ -23,6 +23,8 @@ dependencies = [
 
 [tool.fastapi]
 entrypoint = "crm.main:app"
+
+
 [project.scripts]
 crm = "crm:main"
 

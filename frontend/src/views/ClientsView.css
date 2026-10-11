@@ -1,0 +1,22 @@
+.clients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 18px;
+}
+.client-card {
+  padding: 20px;
+}
+.client-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.note-preview.MuiTypography-root {
+  margin: 18px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  min-height: 40px;
+}
