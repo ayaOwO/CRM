@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from crm.data import SqlContactStore
 from crm.models.orm.base import Base
 from crm.models.requests.contact_create import ContactCreate
+from crm.models.requests.contact_update import ContactUpdate
 
 
 class ContactStoreTest(unittest.IsolatedAsyncioTestCase):
@@ -36,6 +37,20 @@ class ContactStoreTest(unittest.IsolatedAsyncioTestCase):
             ):
                 self.assertEqual(await store.search_contacts(**{field: term}), [saved])
             self.assertEqual(await store.search_contacts(notes="_"), [])
+            patched = await store.update_contact(
+                saved.id, ContactUpdate(first_name="Augusta", notes=None)
+            )
+            self.assertIsNotNone(patched)
+            assert patched is not None
+            self.assertEqual(patched.first_name, "Augusta")
+            self.assertIsNone(patched.notes)
+            self.assertEqual(patched.last_name, saved.last_name)
+            self.assertEqual(patched.phone_number, saved.phone_number)
+            self.assertEqual(patched.created_at, saved.created_at)
+            self.assertEqual(await store.get_contact_by_id(saved.id), patched)
+            self.assertEqual(
+                await store.update_contact(saved.id, ContactUpdate()), patched
+            )
             replacement = ContactCreate(first_name="Grace", last_name="Hopper")
             updated = await store.replace_contact(saved.id, replacement)
             self.assertIsNotNone(updated)
@@ -52,6 +67,10 @@ class ContactStoreTest(unittest.IsolatedAsyncioTestCase):
             self.assertIsNone(await store.get_contact_by_id(saved.id))
             self.assertFalse(await store.delete_contact(saved.id))
             self.assertIsNone(await store.replace_contact(saved.id, replacement))
+            self.assertIsNone(await store.update_contact(saved.id, ContactUpdate()))
+            self.assertIsNone(
+                await store.update_contact(saved.id, ContactUpdate(notes="Missing"))
+            )
         finally:
             await engine.dispose()
 

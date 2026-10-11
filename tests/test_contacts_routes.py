@@ -72,7 +72,7 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
                 response = await self.client.request(method, url, json=invalid)
                 self.assertEqual(response.status_code, 422)
         self.assertEqual((await self.client.get("/contacts/invalid")).status_code, 422)
-        self.assertEqual((await self.client.patch(path, json={})).status_code, 501)
+        self.assertEqual((await self.client.patch(path, json={})).json(), saved)
         replacement = {"first_name": "Grace", "last_name": "Hopper"}
         response = await self.client.put(path, json=replacement)
         self.assertEqual(response.status_code, 200)
@@ -87,10 +87,46 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
         response = await self.client.delete(path)
         self.assertEqual(response.status_code, 204)
         self.assertEqual(response.content, b"")
-        for method in ("GET", "PUT", "DELETE"):
+        for method in ("GET", "PUT", "PATCH", "DELETE"):
             response = await self.client.request(method, path, json=replacement)
             self.assertEqual(response.status_code, 404)
         self.assertEqual((await self.client.get("/contacts")).json(), [])
+
+    async def test_partial_update_persistence_and_validation(self):
+        payload = {
+            "first_name": "Ada",
+            "last_name": "Lovelace",
+            "phone_number": "+972050",
+            "notes": "Keep these notes",
+            "google_docs_link": "https://docs.google.com/example",
+        }
+        saved = (await self.client.post("/contacts", json=payload)).json()
+        path = f"/contacts/{saved['id']}"
+        changes = {"first_name": "Grace", "phone_number": None}
+        response = await self.client.patch(path, json=changes)
+        self.assertEqual(response.status_code, 200, response.text)
+        expected = saved | changes
+        self.assertEqual(response.json(), expected)
+        self.assertEqual((await self.client.get(path)).json(), expected)
+        for invalid in (
+            {"first_name": None},
+            {"last_name": None},
+            {"first_name": ""},
+            {"last_name": ""},
+            {"first_name": "A" * 256},
+            {"phone_number": "0" * 51},
+        ):
+            response = await self.client.patch(path, json=invalid)
+            self.assertEqual(response.status_code, 422, response.text)
+            self.assertEqual((await self.client.get(path)).json(), expected)
+        changes = {"notes": None, "google_docs_link": None, "last_name": "Hopper"}
+        expected |= changes
+        self.assertEqual((await self.client.patch(path, json=changes)).json(), expected)
+        self.assertEqual((await self.client.get(path)).json(), expected)
+        self.assertEqual((await self.client.patch(path, json={})).json(), expected)
+        self.assertEqual(
+            (await self.client.patch("/contacts/999999", json={})).status_code, 404
+        )
 
     async def test_filters(self):
         payloads = (

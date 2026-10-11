@@ -6,6 +6,7 @@ from crm.models.orm.contacts_table import ContactsTable
 from crm.models.requests.appointment_create import AppointmentCreate
 from crm.models.requests.appointment_update import AppointmentUpdate
 from crm.models.requests.contact_create import ContactCreate
+from crm.models.requests.contact_update import ContactUpdate
 from crm.models.settings import Settings
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "AppointmentsTable",
     "Contact",
     "ContactCreate",
+    "ContactUpdate",
     "ContactsTable",
     "Settings",
 ]

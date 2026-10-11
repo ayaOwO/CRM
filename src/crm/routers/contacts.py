@@ -7,6 +7,7 @@ from crm.data import AbstractContactStore
 from crm.dependencies import get_contact_store
 from crm.models.contacts import Contact
 from crm.models.requests.contact_create import ContactCreate
+from crm.models.requests.contact_update import ContactUpdate
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 ContactStore = Annotated[AbstractContactStore, Depends(get_contact_store)]
@@ -54,8 +55,15 @@ async def replace_contact(
 
 
 @router.patch("/{id}")
-async def update_contact(id: int) -> None:
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED)
+async def update_contact(
+    id: int, contact: ContactUpdate, store: ContactStore
+) -> Contact:
+    saved = await store.update_contact(id, contact)
+    if saved is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
+        )
+    return saved
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)

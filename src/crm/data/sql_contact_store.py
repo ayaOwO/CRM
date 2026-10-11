@@ -5,6 +5,7 @@ from crm.data.abstract_contact_store import AbstractContactStore
 from crm.models.contacts import Contact
 from crm.models.orm.contacts_table import ContactsTable
 from crm.models.requests.contact_create import ContactCreate
+from crm.models.requests.contact_update import ContactUpdate
 
 
 class SqlContactStore(AbstractContactStore):
@@ -49,6 +50,24 @@ class SqlContactStore(AbstractContactStore):
         )
         async with self.session_maker() as session:
             row = (await session.scalars(replace_query)).one_or_none()
+            saved = Contact.model_validate(row) if row is not None else None
+            await session.commit()
+            return saved
+
+    async def update_contact(
+        self, contact_id: int, contact: ContactUpdate
+    ) -> Contact | None:
+        changes = contact.model_dump(exclude_unset=True)
+        if not changes:
+            return await self.get_contact_by_id(contact_id)
+        update_query = (
+            update(ContactsTable)
+            .where(ContactsTable.id == contact_id)
+            .values(**changes)
+            .returning(ContactsTable)
+        )
+        async with self.session_maker() as session:
+            row = (await session.scalars(update_query)).one_or_none()
             saved = Contact.model_validate(row) if row is not None else None
             await session.commit()
             return saved
