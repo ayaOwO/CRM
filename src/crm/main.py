@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import logfire
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from scalar_fastapi import add_scalar_reference
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -36,6 +36,11 @@ logfire.instrument_system_metrics()
 
 app.include_router(contacts.router)
 app.include_router(appointments.router)
+
+
+@app.head("/")
+async def health_check():
+    return Response(status_code=200)
 
 
 @app.get("/")
