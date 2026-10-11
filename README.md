@@ -22,3 +22,7 @@ uv run uvicorn crm.main:app --host 127.0.0.1 --port 8000
 ```
 
 Open [http://127.0.0.1:8000/scalar](http://127.0.0.1:8000/scalar).
+
+GitHub Actions runs backend lint, formatting, and unit tests plus frontend
+formatting, tests, and the production build on pushes and pull requests.
+Backend tests use SQLite and dummy settings; no repository secrets are required.
