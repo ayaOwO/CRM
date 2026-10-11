@@ -3,7 +3,6 @@
     <option name="args">
       <list>
         <option value="dev" />
-        <option value="./src/crm/main.py" />
       </list>
     </option>
     <option name="checkSync" value="true" />

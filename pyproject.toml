@@ -21,6 +21,8 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.1.1",
 ]
 
+[tool.fastapi]
+entrypoint = "crm.main:app"
 [project.scripts]
 crm = "crm:main"
 
