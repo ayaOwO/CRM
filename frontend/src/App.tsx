@@ -40,7 +40,15 @@ const blankContact: ContactDraft = {
   notes: "",
   google_docs_link: "",
 };
-export default function App() {
+export default function App({
+  themeColor,
+  onThemeColorChange,
+  themeSaveError,
+}: {
+  themeColor: string;
+  onThemeColorChange: (color: string) => void;
+  themeSaveError: boolean;
+}) {
   const [page, setPage] = useState<Page>("home");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -376,7 +384,13 @@ export default function App() {
         formError={formError}
         deleteRecord={deleteRecord}
       />
-      <SettingsDialog open={settings} onClose={() => setSettings(false)} />
+      <SettingsDialog
+        open={settings}
+        onClose={() => setSettings(false)}
+        themeColor={themeColor}
+        onThemeColorChange={onThemeColorChange}
+        themeSaveError={themeSaveError}
+      />
       <Snackbar
         open={!!toast}
         autoHideDuration={3500}

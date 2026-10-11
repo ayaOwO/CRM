@@ -11,6 +11,13 @@ import {
 } from "../lib/calendar";
 import { matchesContactName, safeLink } from "../lib/contacts";
 import type { Appointment, Contact } from "../types";
+import {
+  createAppTheme,
+  defaultThemeColor,
+  readThemeColor,
+  saveThemeColor,
+  themeColorStorageKey,
+} from "../theme";
 function event(id: number, start: Date, end: Date): Appointment {
   return {
     id,
@@ -26,6 +33,50 @@ const hour = (date: Date, h: number) => {
   return d;
 };
 afterEach(() => vi.unstubAllGlobals());
+describe("theme preferences", () => {
+  it("restores a saved color and rejects malformed stored values", () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    });
+    expect(readThemeColor()).toBe(defaultThemeColor);
+    expect(saveThemeColor("#663399")).toBe(true);
+    expect(readThemeColor()).toBe("#663399");
+    expect(createAppTheme(readThemeColor()).palette.primary.main).toBe(
+      "#663399",
+    );
+    values.set(themeColorStorageKey, "broken");
+    expect(readThemeColor()).toBe(defaultThemeColor);
+  });
+  it("uses the default and reports persistence failure when storage is blocked", () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () => {
+        throw new Error("Storage blocked");
+      },
+      setItem: () => {
+        throw new Error("Storage blocked");
+      },
+    });
+    expect(readThemeColor()).toBe(defaultThemeColor);
+    expect(saveThemeColor("#663399")).toBe(false);
+  });
+  it("updates theme tints while preserving RTL and component defaults", () => {
+    const original = createAppTheme(defaultThemeColor);
+    const changed = createAppTheme("#663399");
+    expect(changed.palette.primary.light).not.toBe(
+      original.palette.primary.light,
+    );
+    expect(changed.palette.action.selected).not.toBe(
+      original.palette.action.selected,
+    );
+    expect(changed.palette.background.default).not.toBe(
+      original.palette.background.default,
+    );
+    expect(changed.direction).toBe("rtl");
+    expect(changed.components?.MuiTextField?.defaultProps?.size).toBe("small");
+  });
+});
 describe("client name search", () => {
   const contact: Contact = {
     id: 1,
