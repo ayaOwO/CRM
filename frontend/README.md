@@ -73,7 +73,7 @@ variables are public: never put secrets in them.
 ## What works
 
 - Dashboard with client and appointment counts and today's appointments.
-- Client search, full-record edits, notes, phone, document links, and deletion.
+- Client search by name, full-record edits, notes, phone, document links, and deletion.
 - Sunday–Saturday calendar with overlapping appointments, local-time forms,
   multi-client selection, and a mobile daily agenda.
 - Client cards show their full appointment history.
