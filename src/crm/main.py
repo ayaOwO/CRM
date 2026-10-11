@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(lifespan=lifespan)
 
-logfire.configure(service_name="crm")
+logfire.configure(service_name="crm", environment=get_settings().logfire_environment)
 logfire.instrument_pydantic_ai(include_content=False, include_binary_content=False)
 logfire.instrument_fastapi(app)
 logfire.instrument_system_metrics()

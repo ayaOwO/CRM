@@ -1,12 +1,11 @@
-from dataclasses import field
-
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    openai_api_key: str = field(default="")
-    openai_endpoint: str = field()
-    openai_model: str = field()
+    openai_api_key: str = Field(default="")
+    openai_endpoint: str = Field()
+    openai_model: str = Field()
     database_url: str = Field()
+    logfire_environment: str = Field()
     model_config = SettingsConfigDict(env_file=".env")
