@@ -4,7 +4,7 @@ from functools import lru_cache
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from crm.data import AbstractContactStore
+from crm.data import AbstractAppointmentStore, AbstractContactStore
 from crm.models.settings import Settings
 
 
@@ -20,3 +20,7 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
 
 async def get_contact_store(request: Request) -> AbstractContactStore:
     return request.app.state.contact_store
+
+
+async def get_appointment_store(request: Request) -> AbstractAppointmentStore:
+    return request.app.state.appointment_store

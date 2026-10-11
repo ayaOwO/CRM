@@ -8,8 +8,9 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from crm.data import SqlContactStore
+from crm.data.sql_appointment_store import SqlAppointmentStore
 from crm.dependencies import get_settings
-from crm.routers import contacts
+from crm.routers import appointments, contacts
 
 
 @asynccontextmanager
@@ -18,7 +19,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     engine = create_async_engine(url)
     try:
         session_factory = async_sessionmaker(engine, expire_on_commit=False)
+        app.state.session_factory = session_factory
         app.state.contact_store = SqlContactStore(session_factory)
+        app.state.appointment_store = SqlAppointmentStore(session_factory)
         yield
     finally:
         await engine.dispose()
@@ -32,6 +35,7 @@ logfire.instrument_fastapi(app)
 logfire.instrument_system_metrics()
 
 app.include_router(contacts.router)
+app.include_router(appointments.router)
 
 
 @app.get("/")

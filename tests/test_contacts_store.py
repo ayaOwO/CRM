@@ -3,8 +3,8 @@ import unittest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from crm.data import SqlContactStore
-from crm.models.contacts import ContactCreate
-from crm.models.contacts_table import Base
+from crm.models.orm.base import Base
+from crm.models.requests.contact_create import ContactCreate
 
 
 class ContactStoreTest(unittest.IsolatedAsyncioTestCase):

@@ -10,7 +10,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from crm.main import app
-from crm.models.contacts_table import Base
+from crm.models.orm.base import Base
 from crm.models.settings import Settings
 
 

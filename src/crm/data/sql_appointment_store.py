@@ -1,0 +1,125 @@
+from datetime import UTC, datetime
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from crm.data.abstract_appointment_store import AbstractAppointmentStore
+from crm.models.appointments import Appointment
+from crm.models.orm.appointment_guests_table import AppointmentGuestsTable
+from crm.models.orm.appointments_table import AppointmentsTable
+from crm.models.orm.contacts_table import ContactsTable
+from crm.models.requests.appointment_create import AppointmentCreate
+from crm.models.requests.appointment_update import AppointmentUpdate
+
+
+class SqlAppointmentStore(AbstractAppointmentStore):
+    def __init__(self, session_maker: async_sessionmaker[AsyncSession]):
+        self.session_maker = session_maker
+
+    @staticmethod
+    def _response(row: AppointmentsTable) -> Appointment:
+        # SQLite does not preserve timezone information in timestamp columns.
+        return Appointment(
+            id=row.id,
+            location=row.location,
+            start_time=row.start_time.replace(tzinfo=UTC)
+            if row.start_time.tzinfo is None
+            else row.start_time,
+            end_time=row.end_time.replace(tzinfo=UTC)
+            if row.end_time.tzinfo is None
+            else row.end_time,
+            guests=sorted(link.contact_id for link in row.guest_links),
+        )
+
+    @staticmethod
+    async def _validate_guests(session: AsyncSession, guests: list[int]) -> None:
+        if not guests:
+            return
+        found = set(
+            await session.scalars(
+                select(ContactsTable.id)
+                .where(ContactsTable.id.in_(guests))
+                .with_for_update(read=True, key_share=True)
+            )
+        )
+        missing = sorted(set(guests) - found)
+        if missing:
+            raise ValueError(f"Unknown contact IDs: {missing}")
+
+    async def add_appointment(self, appointment: AppointmentCreate) -> Appointment:
+        async with self.session_maker() as session, session.begin():
+            await self._validate_guests(session, appointment.guests)
+            row = AppointmentsTable(
+                **appointment.model_dump(exclude={"guests"}),
+                guest_links=[
+                    AppointmentGuestsTable(contact_id=id) for id in appointment.guests
+                ],
+            )
+            session.add(row)
+            await session.flush()
+            return self._response(row)
+
+    async def get_appointment(self, id: int) -> Appointment | None:
+        async with self.session_maker() as session:
+            row = await session.get(AppointmentsTable, id)
+            return self._response(row) if row is not None else None
+
+    async def list_appointments(
+        self, start_time: datetime | None = None, end_time: datetime | None = None
+    ) -> list[Appointment]:
+        query = select(AppointmentsTable).order_by(
+            AppointmentsTable.start_time, AppointmentsTable.id
+        )
+        if start_time is not None:
+            query = query.where(
+                AppointmentsTable.start_time >= start_time.astimezone(UTC)
+            )
+        if end_time is not None:
+            query = query.where(AppointmentsTable.start_time < end_time.astimezone(UTC))
+        async with self.session_maker() as session:
+            return [self._response(row) for row in await session.scalars(query)]
+
+    async def update_appointment(
+        self, id: int, update: AppointmentUpdate
+    ) -> Appointment | None:
+        async with self.session_maker() as session, session.begin():
+            row = (
+                await session.scalars(
+                    select(AppointmentsTable)
+                    .where(AppointmentsTable.id == id)
+                    .with_for_update()
+                )
+            ).one_or_none()
+            if row is None:
+                return None
+            changes = update.model_dump(exclude_unset=True)
+            merged = AppointmentCreate.model_validate(
+                self._response(row).model_dump(exclude={"id"}) | changes
+            )
+            if "guests" in changes:
+                await self._validate_guests(session, merged.guests)
+                existing = {link.contact_id: link for link in row.guest_links}
+                row.guest_links = [
+                    existing[id]
+                    if id in existing
+                    else AppointmentGuestsTable(contact_id=id)
+                    for id in merged.guests
+                ]
+            for field, value in merged.model_dump(exclude={"guests"}).items():
+                setattr(row, field, value)
+            await session.flush()
+            return self._response(row)
+
+    async def delete_appointment(self, id: int) -> bool:
+        async with self.session_maker() as session, session.begin():
+            row = (
+                await session.scalars(
+                    select(AppointmentsTable)
+                    .where(AppointmentsTable.id == id)
+                    .with_for_update()
+                )
+            ).one_or_none()
+            if row is None:
+                return False
+            await session.delete(row)
+            return True
