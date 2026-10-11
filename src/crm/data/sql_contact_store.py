@@ -2,8 +2,9 @@ from sqlalchemy import delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from crm.data.abstract_contact_store import AbstractContactStore
-from crm.models.contacts import Contact, ContactCreate
-from crm.models.contacts_table import ContactsTable
+from crm.models.contacts import Contact
+from crm.models.orm.contacts_table import ContactsTable
+from crm.models.requests.contact_create import ContactCreate
 
 
 class SqlContactStore(AbstractContactStore):

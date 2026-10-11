@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-from crm.models.contacts import Contact, ContactCreate
+from crm.models.contacts import Contact
+from crm.models.requests.contact_create import ContactCreate
 
 
 class AbstractContactStore(ABC):

@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from crm.data import AbstractContactStore
 from crm.dependencies import get_contact_store
-from crm.models.contacts import Contact, ContactCreate
+from crm.models.contacts import Contact
+from crm.models.requests.contact_create import ContactCreate
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 ContactStore = Annotated[AbstractContactStore, Depends(get_contact_store)]

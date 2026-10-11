@@ -1,14 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict
 
-
-class ContactCreate(BaseModel):
-    phone_number: str | None = Field(default=None, max_length=50)
-    notes: str | None = None
-    first_name: str = Field(min_length=1, max_length=255)
-    last_name: str = Field(min_length=1, max_length=255)
-    google_docs_link: str | None = None
+from crm.models.requests.contact_create import ContactCreate
 
 
 class Contact(ContactCreate):
