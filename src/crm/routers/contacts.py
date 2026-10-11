@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 
 from crm.data import AbstractContactStore
 from crm.dependencies import get_contact_store
@@ -21,16 +22,12 @@ async def list_contacts(
     store: ContactStore,
     first_name: str | None = None,
     last_name: str | None = None,
-    phone_number: str | None = None,
     notes: str | None = None,
-    google_docs_link: str | None = None,
 ) -> list[Contact]:
     return await store.search_contacts(
         first_name=first_name,
         last_name=last_name,
-        phone_number=phone_number,
         notes=notes,
-        google_docs_link=google_docs_link,
     )
 
 
@@ -63,7 +60,14 @@ async def update_contact(id: int) -> None:
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_contact(id: int, store: ContactStore) -> None:
-    if not await store.delete_contact(id):
+    try:
+        deleted = await store.delete_contact(id)
+    except IntegrityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Contact is referenced by appointments",
+        ) from exc
+    if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
         )
