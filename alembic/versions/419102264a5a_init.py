@@ -1,7 +1,7 @@
 """Create contacts table.
 
 Revision ID: 419102264a5a
-Revises:
+Revises: init contacts table
 Create Date: 2026-10-11 17:15:40.722521
 
 """
@@ -36,9 +36,21 @@ def upgrade() -> None:
             nullable=False,
         ),
     )
-    op.create_index("ix_notes", "contacts", ["notes"], unique=False)
+    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+    op.create_index(
+        "ix_contacts_notes_trgm",
+        "contacts",
+        ["notes"],
+        postgresql_using="gin",
+        postgresql_ops={"notes": "gin_trgm_ops"},
+    )
+    op.create_index(
+        "ix_contacts_first_last_name",
+        "contacts",
+        ["first_name", "last_name"],
+    )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_table("contacts")
+    op.drop_table("contacts", if_exists=True)
