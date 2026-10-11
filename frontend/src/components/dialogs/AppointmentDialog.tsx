@@ -7,14 +7,19 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import DeleteOutline from "@mui/icons-material/DeleteOutline";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import dayjs from "dayjs";
 import {
-  dateInput,
   timezone,
   meetingDurationPresets,
+  meetingLocationOptions,
   meetingEnd,
 } from "../../lib/calendar";
 import { fullName } from "../../lib/contacts";
@@ -83,83 +88,105 @@ export default function AppointmentDialog({
                   )}
                 />
                 <TextField
+                  select
                   required
                   label="מיקום"
-                  value={appointmentDraft.location}
+                  value={
+                    meetingLocationOptions.some(
+                      (location) => location === appointmentDraft.location,
+                    )
+                      ? appointmentDraft.location
+                      : ""
+                  }
                   onChange={(e) =>
                     setAppointmentDraft({
                       ...appointmentDraft,
                       location: e.target.value,
                     })
                   }
-                />
-                <TextField
-                  required
-                  type="datetime-local"
-                  label="תחילת הפגישה"
-                  slotProps={{
-                    inputLabel: { shrink: true },
-                    htmlInput: { dir: "ltr" },
-                  }}
-                  value={
-                    Number.isFinite(+new Date(appointmentDraft.start_time))
-                      ? dateInput(new Date(appointmentDraft.start_time))
-                      : ""
-                  }
-                  onChange={(e) =>
-                    setAppointmentDraft({
-                      ...appointmentDraft,
-                      start_time: e.target.value,
-                      end_time: meetingEnd(e.target.value, durationMinutes),
-                    })
-                  }
-                />
-                <Stack direction="row" spacing={1}>
-                  {meetingDurationPresets.map((minutes) => (
-                    <Button
-                      key={minutes}
-                      variant={
-                        durationMinutes === minutes ? "contained" : "outlined"
-                      }
-                      aria-pressed={durationMinutes === minutes}
-                      onClick={() => {
-                        setAppointmentDraft({
-                          ...appointmentDraft,
-                          durationMinutes: minutes,
-                          end_time: meetingEnd(
-                            appointmentDraft.start_time,
-                            minutes,
-                          ),
-                        });
-                      }}
-                    >
-                      {minutes} דקות
-                    </Button>
+                >
+                  {meetingLocationOptions.map((location) => (
+                    <MenuItem key={location} value={location}>
+                      {location}
+                    </MenuItem>
                   ))}
-                </Stack>
-                <TextField
-                  required
-                  type="number"
-                  label="משך הפגישה בדקות"
+                </TextField>
+                <DateTimePicker
+                  label="תחילת הפגישה"
+                  ampm={false}
+                  format="DD/MM/YYYY HH:mm"
+                  timeSteps={{ minutes: 1 }}
                   slotProps={{
-                    htmlInput: { dir: "ltr", min: 1, step: 1 },
+                    textField: {
+                      required: true,
+                      fullWidth: true,
+                      size: "small",
+                    },
                   }}
                   value={
-                    Number.isFinite(durationMinutes) ? durationMinutes : ""
+                    appointmentDraft.start_time
+                      ? dayjs(appointmentDraft.start_time)
+                      : null
                   }
-                  onChange={(e) => {
-                    const minutes =
-                      e.target.value === "" ? NaN : Number(e.target.value);
+                  onChange={(value) => {
+                    const start = value?.isValid() ? value.toISOString() : "";
                     setAppointmentDraft({
                       ...appointmentDraft,
-                      durationMinutes: minutes,
-                      end_time: meetingEnd(
-                        appointmentDraft.start_time,
-                        minutes,
-                      ),
+                      start_time: start,
+                      end_time: meetingEnd(start, durationMinutes),
                     });
                   }}
                 />
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <ToggleButtonGroup
+                    size="small"
+                    sx={{ flexShrink: 0 }}
+                    exclusive
+                    value={durationMinutes}
+                    aria-label="משך הפגישה"
+                    onChange={(_, minutes: number | null) => {
+                      if (minutes === null) return;
+                      setAppointmentDraft({
+                        ...appointmentDraft,
+                        durationMinutes: minutes,
+                        end_time: meetingEnd(
+                          appointmentDraft.start_time,
+                          minutes,
+                        ),
+                      });
+                    }}
+                  >
+                    {meetingDurationPresets.map((minutes) => (
+                      <ToggleButton key={minutes} value={minutes}>
+                        {minutes} דקות
+                      </ToggleButton>
+                    ))}
+                  </ToggleButtonGroup>
+                  <TextField
+                    required
+                    type="number"
+                    label="דקות"
+                    sx={{ width: 80, minWidth: 0 }}
+                    slotProps={{
+                      htmlInput: { dir: "ltr", min: 1, step: 1 },
+                    }}
+                    value={
+                      Number.isFinite(durationMinutes) ? durationMinutes : ""
+                    }
+                    onChange={(e) => {
+                      const minutes =
+                        e.target.value === "" ? NaN : Number(e.target.value);
+                      setAppointmentDraft({
+                        ...appointmentDraft,
+                        durationMinutes: minutes,
+                        end_time: meetingEnd(
+                          appointmentDraft.start_time,
+                          minutes,
+                        ),
+                      });
+                    }}
+                  />
+                </Stack>
                 <Typography variant="caption" color="text.secondary">
                   השעות לפי <Box component="bdi">{timezone}</Box>. פגישות חופפות
                   מותרות.

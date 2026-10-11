@@ -46,7 +46,14 @@ export default function ClientDetailsDialog({
   return (
     <Dialog open={!!detail} onClose={closeDetail} fullWidth maxWidth="sm">
       <DialogTitle>
-        <Box className="section-heading">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
           <Typography variant="h6">{detail && fullName(detail)}</Typography>
           <IconButton aria-label="סגירה" onClick={closeDetail}>
             <Close />

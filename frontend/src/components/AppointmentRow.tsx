@@ -15,8 +15,20 @@ export default function AppointmentRow({
   onEdit: (a: Appointment) => void;
 }) {
   return (
-    <Button className="appointment-row" fullWidth onClick={() => onEdit(a)}>
-      <Box className="appointment-time" dir="ltr">
+    <Button
+      fullWidth
+      onClick={() => onEdit(a)}
+      sx={{
+        gap: 1.75,
+        py: 1.75,
+        px: 1,
+        borderBottom: 1,
+        borderColor: "divider",
+        borderRadius: 0,
+        color: "text.primary",
+      }}
+    >
+      <Box sx={{ width: 62, fontWeight: 700, flexShrink: 0 }} dir="ltr">
         {time(a.start_time)}
         <Typography
           component="small"

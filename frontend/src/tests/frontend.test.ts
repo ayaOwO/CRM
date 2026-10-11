@@ -1,8 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { api } from "../lib/api";
 import {
-  dateInput,
-  layoutEvents,
+  appointmentsForDay,
   shiftDay,
   weekStart,
   meetingDurationPresets,
@@ -18,6 +17,8 @@ import {
   saveThemeColor,
   themeColorStorageKey,
 } from "../theme";
+const localDate = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 function event(id: number, start: Date, end: Date): Appointment {
   return {
     id,
@@ -101,13 +102,13 @@ describe("calendar and link boundaries", () => {
   it("defaults to 10am for 90 minutes and supports custom positive whole minutes", () => {
     const day = new Date(2026, 9, 11, 16, 42);
     const start = defaultMeetingStart(day);
-    expect(dateInput(start)).toBe("2026-10-11T10:00");
+    expect(localDate(start)).toBe("2026-10-11T10:00");
     expect(
-      dateInput(
+      localDate(
         new Date(meetingEnd(start.toISOString(), meetingDurationPresets[0])),
       ),
     ).toBe("2026-10-11T11:30");
-    expect(dateInput(new Date(meetingEnd(start.toISOString(), 37)))).toBe(
+    expect(localDate(new Date(meetingEnd(start.toISOString(), 37)))).toBe(
       "2026-10-11T10:37",
     );
     expect(day.getHours()).toBe(16);
@@ -127,28 +128,12 @@ describe("calendar and link boundaries", () => {
     const start = weekStart(day);
     expect(start.getDay()).toBe(0);
     expect(start.getHours()).toBe(0);
-    expect(dateInput(hour(shiftDay(start, 1), 9))).toBe("2026-10-12T09:00");
+    expect(localDate(hour(shiftDay(start, 1), 9))).toBe("2026-10-12T09:00");
   });
-  it("shares lanes for overlaps and resets for separate groups", () => {
-    const day = new Date(2026, 9, 11);
-    const result = layoutEvents(
-      [
-        event(1, hour(day, 9), hour(day, 11)),
-        event(2, hour(day, 10), hour(day, 12)),
-        event(3, hour(day, 12), hour(day, 13)),
-      ],
-      day,
-    );
-    expect(result.map((e) => [e.lane, e.lanes])).toEqual([
-      [0, 2],
-      [1, 2],
-      [0, 1],
-    ]);
-  });
-  it("clips overnight appointments and excludes adjacent dates", () => {
+  it("includes overnight appointments and excludes adjacent dates", () => {
     const day = new Date(2026, 9, 11);
     const tomorrow = shiftDay(day, 1);
-    const result = layoutEvents(
+    const result = appointmentsForDay(
       [
         event(1, hour(shiftDay(day, -1), 23), hour(day, 1)),
         event(2, hour(day, 23), hour(tomorrow, 1)),
@@ -156,9 +141,7 @@ describe("calendar and link boundaries", () => {
       ],
       day,
     );
-    expect(result.map((e) => e.event.id)).toEqual([1, 2]);
-    expect(result[0].start).toBe(+day);
-    expect(result[1].end).toBe(+tomorrow);
+    expect(result.map((e) => e.id)).toEqual([1, 2]);
   });
   it("allows only valid http(s) links", () => {
     expect(safeLink("javascript:alert(1)")).toBeUndefined();

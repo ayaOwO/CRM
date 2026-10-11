@@ -1,10 +1,17 @@
 import type { ReactNode } from "react";
-import "../styles/layout.css";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
-import Paper from "@mui/material/Paper";
+import Drawer from "@mui/material/Drawer";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Container from "@mui/material/Container";
+import Stack from "@mui/material/Stack";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import Add from "@mui/icons-material/Add";
 import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
@@ -35,10 +42,55 @@ export default function AppShell({
   children: ReactNode;
 }) {
   const now = new Date();
+  const navigation = (
+    <List
+      component="nav"
+      aria-label="ניווט ראשי"
+      sx={{ display: { xs: "flex", md: "block" } }}
+    >
+      {(
+        [
+          ["home", DashboardOutlined],
+          ["clients", GroupOutlined],
+          ["calendar", CalendarMonthOutlined],
+        ] as const
+      ).map(([key, Icon]) => (
+        <ListItemButton
+          key={key}
+          selected={page === key}
+          onClick={() => onPageChange(key)}
+          aria-current={page === key ? "page" : undefined}
+          sx={{
+            borderRadius: 1,
+            flex: { xs: 1, md: "initial" },
+            px: { xs: 1, md: 2 },
+            mb: { md: 1 },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: { xs: 28, md: 40 }, color: "inherit" }}>
+            <Icon />
+          </ListItemIcon>
+          <ListItemText
+            primary={names[key]}
+            slotProps={{ primary: { fontSize: { xs: 12, md: 14 } } }}
+          />
+        </ListItemButton>
+      ))}
+    </List>
+  );
   return (
-    <Box className="app-shell">
-      <Paper component="aside" className="sidebar">
-        <Box className="brand">
+    <Stack direction={{ xs: "column", md: "row" }} sx={{ minHeight: "100vh" }}>
+      <Drawer
+        variant="permanent"
+        anchor="left"
+        sx={{
+          display: { xs: "none", md: "block" },
+          width: 244,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": { width: 244, px: 2.5, py: 4, borderRadius: 0 },
+        }}
+      >
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 5 }}>
           <Avatar sx={{ bgcolor: "primary.main", width: 44, height: 44 }}>
             <SpaOutlined />
           </Avatar>
@@ -48,34 +100,12 @@ export default function AppShell({
               ניהול קליניקה וטיפול
             </Typography>
           </Box>
-        </Box>
-        <Typography
-          className="nav-caption"
-          variant="overline"
-          color="text.secondary"
-        >
+        </Stack>
+        <Typography sx={{ px: 1.5 }} variant="overline" color="text.secondary">
           מרחב העבודה
         </Typography>
-        <Box component="nav" aria-label="ניווט ראשי" className="nav-links">
-          {(
-            [
-              ["home", DashboardOutlined],
-              ["clients", GroupOutlined],
-              ["calendar", CalendarMonthOutlined],
-            ] as const
-          ).map(([key, Icon]) => (
-            <Button
-              key={key}
-              className={page === key ? "nav-active" : ""}
-              startIcon={<Icon />}
-              onClick={() => onPageChange(key)}
-              aria-current={page === key ? "page" : undefined}
-            >
-              {names[key]}
-            </Button>
-          ))}
-        </Box>
-        <Box className="sidebar-bottom">
+        {navigation}
+        <Box sx={{ mt: "auto", pt: 4 }}>
           <Button
             fullWidth
             startIcon={<SettingsOutlined />}
@@ -91,14 +121,49 @@ export default function AppShell({
             התחברות עם Google
           </Button>
         </Box>
-      </Paper>
-      <Box component="main" className="main-content">
-        <Box component="header" className="page-header">
+      </Drawer>
+      <AppBar
+        position="static"
+        color="inherit"
+        elevation={0}
+        sx={{
+          display: { xs: "block", md: "none" },
+          borderBottom: 1,
+          borderColor: "divider",
+        }}
+      >
+        <Toolbar>
+          <SpaOutlined color="primary" sx={{ mr: 1 }} />
+          <Typography variant="h5" sx={{ flex: 1 }}>
+            מרחב
+          </Typography>
+          <Button startIcon={<SettingsOutlined />} onClick={onSettings}>
+            הגדרות
+          </Button>
+        </Toolbar>
+        {navigation}
+      </AppBar>
+      <Container
+        component="main"
+        maxWidth={false}
+        sx={{ flex: 1, minWidth: 0, maxWidth: 1600, p: { xs: 2, md: 4 } }}
+      >
+        <Stack
+          component="header"
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          spacing={2}
+          sx={{ mb: 1, flexWrap: "wrap" }}
+        >
           <Box>
             <Typography variant="body2" color="text.secondary">
               {dayFormat.format(now)}
             </Typography>
-            <Typography variant="h4" sx={{ mt: 1 }}>
+            <Typography
+              variant="h4"
+              sx={{ mt: 1, fontSize: { xs: 26, md: 34 } }}
+            >
               {names[page]}
             </Typography>
           </Box>
@@ -109,7 +174,7 @@ export default function AppShell({
           >
             {page === "clients" ? "מטופל חדש" : "פגישה חדשה"}
           </Button>
-        </Box>
+        </Stack>
         <Typography color="text.secondary" sx={{ mb: 3 }}>
           {page === "home"
             ? "מקום אחד למטופלים, לפגישות וליום העבודה שלך."
@@ -118,10 +183,14 @@ export default function AppShell({
               : "תכנון השבוע וניהול הפגישות בקליניקה."}
         </Typography>
         {children}
-        <Typography className="footer" variant="caption" color="text.secondary">
+        <Typography
+          sx={{ display: "block", textAlign: "center", mt: 4.5 }}
+          variant="caption"
+          color="text.secondary"
+        >
           מרחב · ניהול קליניקה · התחברות Google תתווסף בשלב הבא
         </Typography>
-      </Box>
-    </Box>
+      </Container>
+    </Stack>
   );
 }

@@ -13,7 +13,7 @@ export default function EmptyState({
   onClick?: () => void;
 }) {
   return (
-    <Box className="empty-state">
+    <Box sx={{ textAlign: "center", py: 5, px: 2 }}>
       <SpaOutlined sx={{ fontSize: 36, color: "primary.main", mb: 1 }} />
       <Typography color="text.secondary">{text}</Typography>
       {action && (

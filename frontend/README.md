@@ -1,6 +1,6 @@
 # מרחב — Therapy CRM frontend
 
-A Hebrew RTL therapist workspace built with React, TypeScript, MUI, and Vite.
+A Hebrew RTL therapist workspace built with React, TypeScript, MUI, FullCalendar, and Vite.
 The output is static HTML/CSS/JavaScript. FastAPI serves only the API.
 
 ## Local development
@@ -36,15 +36,21 @@ in the backend CORS configuration. These are separate origins even though
 they share the `onrender.com` suffix. This value is public; keep secrets
 out of frontend environment variables.
 
+The calendar uses [FullCalendar's MUI components](https://fullcalendar.io/docs/mui)
+with Hebrew RTL month/week/day views, local times, and the saved MUI theme color.
+Click a time slot to create a meeting or an existing meeting to edit it.
+Only the day-grid, time-grid, and interaction plugins are loaded.
+Month navigation loads the entire displayed date range, including adjacent-month days.
+
 ## Frontend organization
 
 - `src/App.tsx`: state, data loading, and save/delete handlers.
-- `src/views/`: dashboard, clients, and calendar views with their CSS.
+- `src/views/`: dashboard, clients, and FullCalendar views.
 - `src/components/`: shared components and dialogs.
 - `src/lib/`: API transport, contact helpers, and calendar utilities.
 - `src/types.ts`: shared data types.
-- `src/theme/` and `src/styles/`: MUI theme and shared layout styles.
-- `src/tests/`: frontend utility and API tests.
+- `src/theme/`: MUI theme, RTL setup, and saved color preferences.
+- `src/tests/`: frontend utility, API, and component tests.
 
 Run `npm run format` to format frontend files, or `npm run format:check`
 to check formatting without changing files.

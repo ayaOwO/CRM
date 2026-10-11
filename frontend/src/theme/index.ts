@@ -54,6 +54,30 @@ export const createAppTheme = (color: string) =>
         MuiButton: { defaultProps: { disableElevation: true } },
         MuiPaper: { defaultProps: { elevation: 0 } },
         MuiTextField: { defaultProps: { size: "small" } },
+        MuiCard: { defaultProps: { variant: "outlined" } },
+        MuiCardContent: {
+          styleOverrides: {
+            root: ({ theme }) => ({
+              padding: theme.spacing(3),
+              "&:last-child": { paddingBottom: theme.spacing(3) },
+              [theme.breakpoints.down("md")]: {
+                padding: theme.spacing(2),
+                "&:last-child": { paddingBottom: theme.spacing(2) },
+              },
+            }),
+          },
+        },
+        MuiCssBaseline: {
+          styleOverrides: {
+            "@media (prefers-reduced-motion: reduce)": {
+              "*, *::before, *::after": {
+                animation: "none !important",
+                transition: "none !important",
+                scrollBehavior: "auto !important",
+              },
+            },
+          },
+        },
       },
     },
     heIL,

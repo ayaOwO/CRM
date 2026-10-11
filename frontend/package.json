@@ -15,12 +15,17 @@
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@fullcalendar/mui": "^7.1.1",
+    "@fullcalendar/react": "^7.1.1",
     "@mui/icons-material": "^7.0.0",
     "@mui/material": "^7.0.0",
     "@mui/stylis-plugin-rtl": "^7.0.0",
+    "@mui/x-date-pickers": "^9.15.0",
+    "dayjs": "^1.11.23",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "stylis": "^4.3.0"
+    "stylis": "^4.3.0",
+    "temporal-polyfill": "^1.0.5"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

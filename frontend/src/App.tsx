@@ -20,6 +20,7 @@ import {
   weekStart,
   shiftDay,
   meetingDurationPresets,
+  meetingLocationOptions,
   meetingEnd,
   defaultMeetingStart,
 } from "./lib/calendar";
@@ -53,6 +54,7 @@ export default function App({
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [anchor, setAnchor] = useState(() => new Date());
+  const [calendarRange, setCalendarRange] = useState<[Date, Date] | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
@@ -71,6 +73,8 @@ export default function App({
   const refreshVersion = useRef(0);
   const historyVersion = useRef(0);
   const start = weekStart(anchor);
+  const rangeStart = calendarRange?.[0] ?? start;
+  const rangeEnd = calendarRange?.[1] ?? shiftDay(start, 7);
   const contactNames = new Map(contacts.map((c) => [c.id, fullName(c)]));
   const contactName = (id: number) => contactNames.get(id) ?? `מטופל #${id}`;
   const guests = (a: Pick<Appointment, "guests">) =>
@@ -84,9 +88,7 @@ export default function App({
       // Include today even when browsing a different calendar week.
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const until = new Date(
-        Math.max(+shiftDay(start, 7), +shiftDay(today, 1)),
-      );
+      const until = new Date(Math.max(+rangeEnd, +shiftDay(today, 1)));
       // ponytail: the API filters by start time, so a lower bound would hide
       // overnight appointments. Add server-side overlap filtering if volume grows.
       const params = new URLSearchParams({ end_time: until.toISOString() });
@@ -99,8 +101,8 @@ export default function App({
         setAppointments(
           a.filter(
             (item) =>
-              (+new Date(item.end_time) > +start &&
-                +new Date(item.start_time) < +shiftDay(start, 7)) ||
+              (+new Date(item.end_time) > +rangeStart &&
+                +new Date(item.start_time) < +rangeEnd) ||
               (+new Date(item.end_time) > +today &&
                 +new Date(item.start_time) < +shiftDay(today, 1)),
           ),
@@ -117,7 +119,7 @@ export default function App({
     return () => {
       refreshVersion.current++;
     };
-  }, [start.getTime()]); // One fetch per visible week.
+  }, [rangeStart.getTime(), rangeEnd.getTime()]); // One fetch per visible range.
 
   async function openDetail(contact: Contact) {
     const version = ++historyVersion.current;
@@ -146,10 +148,6 @@ export default function App({
   function editAppointment(a?: Appointment, slot?: Date) {
     setFormError("");
     slot = new Date(slot ?? defaultMeetingStart());
-    if (!a) {
-      slot = new Date(slot);
-      slot.setMinutes(0, 0, 0);
-    }
     setAppointmentDraft(
       a
         ? {
@@ -160,7 +158,7 @@ export default function App({
           }
         : {
             guests: [],
-            location: "",
+            location: meetingLocationOptions[0],
             start_time: slot.toISOString(),
             durationMinutes: meetingDurationPresets[0],
             end_time: meetingEnd(slot.toISOString(), meetingDurationPresets[0]),
@@ -288,7 +286,16 @@ export default function App({
         }
       >
         {loading && (
-          <Box role="status" className="loading">
+          <Box
+            role="status"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              p: 1.5,
+              mb: 2,
+            }}
+          >
             <CircularProgress size={22} />
             <Typography>טוענים נתונים…</Typography>
           </Box>
@@ -337,6 +344,13 @@ export default function App({
           <CalendarView
             anchor={anchor}
             setAnchor={setAnchor}
+            onRangeChange={(begin, end) =>
+              setCalendarRange((current) =>
+                current && +current[0] === +begin && +current[1] === +end
+                  ? current
+                  : [begin, end],
+              )
+            }
             appointments={appointments}
             loading={loading}
             guests={guests}
