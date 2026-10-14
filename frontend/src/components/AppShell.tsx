@@ -14,12 +14,13 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import Add from "@mui/icons-material/Add";
-import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
-import DashboardOutlined from "@mui/icons-material/DashboardOutlined";
+import Chair from "@mui/icons-material/Chair";
+import Dashboard from "@mui/icons-material/Dashboard";
 import Google from "@mui/icons-material/Google";
-import GroupOutlined from "@mui/icons-material/GroupOutlined";
-import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
-import SpaOutlined from "@mui/icons-material/SpaOutlined";
+import Group from "@mui/icons-material/Group";
+import PsychologyIcon from "@mui/icons-material/Psychology";
+import Settings from "@mui/icons-material/Settings";
+import Spa from "@mui/icons-material/Spa";
 import { dayFormat } from "../lib/calendar";
 import type { Page } from "../types";
 
@@ -50,9 +51,9 @@ export default function AppShell({
     >
       {(
         [
-          ["home", DashboardOutlined],
-          ["clients", GroupOutlined],
-          ["calendar", CalendarMonthOutlined],
+          ["home", Dashboard],
+          ["clients", Group],
+          ["calendar", Chair],
         ] as const
       ).map(([key, Icon]) => (
         <ListItemButton
@@ -92,25 +93,21 @@ export default function AppShell({
       >
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 5 }}>
           <Avatar sx={{ bgcolor: "primary.main", width: 44, height: 44 }}>
-            <SpaOutlined />
+            <PsychologyIcon />
           </Avatar>
           <Box>
-            <Typography variant="h5">מרחב</Typography>
+            <Typography variant="h5">קליניקה</Typography>
             <Typography variant="caption" color="text.secondary">
               ניהול קליניקה וטיפול
             </Typography>
           </Box>
         </Stack>
         <Typography sx={{ px: 1.5 }} variant="overline" color="text.secondary">
-          מרחב העבודה
+          קליניקה העבודה
         </Typography>
         {navigation}
         <Box sx={{ mt: "auto", pt: 4 }}>
-          <Button
-            fullWidth
-            startIcon={<SettingsOutlined />}
-            onClick={onSettings}
-          >
+          <Button fullWidth startIcon={<Settings />} onClick={onSettings}>
             הגדרות
           </Button>
           <Divider sx={{ my: 2 }} />
@@ -133,11 +130,11 @@ export default function AppShell({
         }}
       >
         <Toolbar>
-          <SpaOutlined color="primary" sx={{ mr: 1 }} />
+          <Spa color="primary" sx={{ mr: 1 }} />
           <Typography variant="h5" sx={{ flex: 1 }}>
-            מרחב
+            קליניקה
           </Typography>
-          <Button startIcon={<SettingsOutlined />} onClick={onSettings}>
+          <Button startIcon={<Settings />} onClick={onSettings}>
             הגדרות
           </Button>
         </Toolbar>
@@ -188,7 +185,7 @@ export default function AppShell({
           variant="caption"
           color="text.secondary"
         >
-          מרחב · ניהול קליניקה · התחברות Google תתווסף בשלב הבא
+          קליניקה · ניהול קליניקה · התחברות Google תתווסף בשלב הבא
         </Typography>
       </Container>
     </Stack>

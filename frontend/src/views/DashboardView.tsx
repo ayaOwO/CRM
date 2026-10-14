@@ -1,5 +1,13 @@
+import Timeline from "@mui/lab/Timeline";
+import TimelineItem from "@mui/lab/TimelineItem";
+import TimelineSeparator from "@mui/lab/TimelineSeparator";
+import TimelineDot from "@mui/lab/TimelineDot";
+import TimelineConnector from "@mui/lab/TimelineConnector";
+import TimelineContent from "@mui/lab/TimelineContent";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import Edit from "@mui/icons-material/Edit";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Stack from "@mui/material/Stack";
@@ -11,13 +19,10 @@ import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import ArrowBack from "@mui/icons-material/ArrowBack";
-import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
-import GroupOutlined from "@mui/icons-material/GroupOutlined";
-import SpaOutlined from "@mui/icons-material/SpaOutlined";
-import { shiftDay, appointmentsForDay } from "../lib/calendar";
+import Chair from "@mui/icons-material/Chair";
+import { shiftDay, appointmentsForDay, time } from "../lib/calendar";
 import { fullName, initials } from "../lib/contacts";
 import type { Appointment, Contact } from "../types";
-import AppointmentRow from "../components/AppointmentRow";
 import EmptyState from "../components/EmptyState";
 
 export default function DashboardView({
@@ -44,70 +49,46 @@ export default function DashboardView({
   onShowClients: () => void;
 }) {
   const todayAppointments = appointmentsForDay(appointments, new Date());
+  const recentContacts = [...contacts]
+    .sort(
+      (a, b) =>
+        +new Date(b.created_at) - +new Date(a.created_at) || b.id - a.id,
+    )
+    .slice(0, 5);
   return (
     <>
-      <Grid container spacing={{ xs: 1, md: 2.5 }} sx={{ mb: 3 }}>
-        {[
-          {
-            label: "מטופלים בקליניקה",
-            value: contacts.length,
-            icon: <GroupOutlined />,
-            note: "כל המטופלים במקום אחד",
-          },
-          {
-            label: "פגישות היום",
-            value: todayAppointments.length,
-            icon: <CalendarMonthOutlined />,
-            note: "זמן לקשר ולמפגש",
-          },
-          {
-            label: "פגישות בשבוע הנבחר",
-            value: appointments.filter(
-              (a) =>
-                +new Date(a.start_time) >= +start &&
-                +new Date(a.start_time) < +shiftDay(start, 7),
-            ).length,
-            icon: <SpaOutlined />,
-            note: "מבט על השבוע שלך",
-          },
-        ].map((s) => (
-          <Grid size={4} key={s.label}>
-            <Card sx={{ height: "100%" }}>
-              <CardContent>
-                <Avatar
-                  sx={{
-                    float: "left",
-                    bgcolor: "primary.light",
-                    color: "primary.main",
-                    display: { xs: "none", md: "flex" },
-                  }}
-                >
-                  {s.icon}
-                </Avatar>
-                <Typography
-                  color="text.secondary"
-                  sx={{ fontSize: { xs: 12, md: 16 } }}
-                >
-                  {s.label}
-                </Typography>
-                <Typography
-                  variant="h3"
-                  sx={{ my: 1, fontWeight: 700, fontSize: { xs: 32, md: 48 } }}
-                >
-                  {loading ? "—" : s.value}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ fontSize: { xs: 12, md: 14 } }}
-                >
-                  {s.note}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Avatar
+            sx={{
+              float: "left",
+              bgcolor: "primary.light",
+              color: "primary.main",
+              display: { xs: "none", md: "flex" },
+            }}
+          >
+            <Chair />
+          </Avatar>
+          <Typography
+            color="text.secondary"
+            sx={{ fontSize: { xs: 12, md: 16 } }}
+          >
+            גפישות השבוע
+          </Typography>
+          <Typography
+            variant="h3"
+            sx={{ my: 1, fontWeight: 700, fontSize: { xs: 32, md: 48 } }}
+          >
+            {loading
+              ? "—"
+              : appointments.filter(
+                  (a) =>
+                    +new Date(a.start_time) >= +start &&
+                    +new Date(a.start_time) < +shiftDay(start, 7),
+                ).length}
+          </Typography>
+        </CardContent>
+      </Card>
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card>
@@ -122,16 +103,60 @@ export default function DashboardView({
                 <Typography variant="h6">הפגישות של היום</Typography>
                 <Button onClick={onShowCalendar}>ליומן</Button>
               </Stack>
-              {todayAppointments.map((a) => (
-                <AppointmentRow
-                  key={a.id}
-                  appointment={a}
-                  label={guests(a)}
-                  onEdit={editAppointment}
-                />
-              ))}
+              {!!todayAppointments.length && (
+                <Timeline sx={{ p: 0, m: 0 }} aria-label="הפגישות של היום">
+                  {todayAppointments.map((a, index) => (
+                    <TimelineItem
+                      key={a.id}
+                      sx={{ "&::before": { display: "none" } }}
+                    >
+                      <TimelineSeparator>
+                        <TimelineDot color="primary">
+                          <Chair fontSize="small" />
+                        </TimelineDot>
+                        {index < todayAppointments.length - 1 && (
+                          <TimelineConnector />
+                        )}
+                      </TimelineSeparator>
+                      <TimelineContent sx={{ minWidth: 0, py: 0.5, pr: 0 }}>
+                        <Button
+                          fullWidth
+                          onClick={() => editAppointment(a)}
+                          sx={{
+                            justifyContent: "space-between",
+                            gap: 1,
+                            textAlign: "start",
+                            color: "text.primary",
+                            py: 1.5,
+                          }}
+                        >
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              component="div"
+                              dir="ltr"
+                              sx={{ textAlign: "start" }}
+                            >
+                              {time(a.start_time)}–{time(a.end_time)}
+                            </Typography>
+                            <Typography fontWeight={700}>
+                              {guests(a)}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {a.location}
+                            </Typography>
+                          </Box>
+                          <Edit fontSize="small" />
+                        </Button>
+                      </TimelineContent>
+                    </TimelineItem>
+                  ))}
+                </Timeline>
+              )}
               {!loading && !todayAppointments.length && (
                 <EmptyState
+                  Icon={Chair}
                   text="אין פגישות היום"
                   action="קביעת פגישה"
                   onClick={() => editAppointment()}
@@ -143,45 +168,39 @@ export default function DashboardView({
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6">מטופלים בקליניקה</Typography>
+              <Typography variant="h6">מטופלים אחרונים</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                גישה מהירה לפרטי המטופלים
+                חמשת המטופלים שנוספו לאחרונה
               </Typography>
               <List disablePadding>
-                {contacts
-                  .slice(-5)
-                  .reverse()
-                  .map((c) => (
-                    <ListItem key={c.id} disablePadding>
-                      <ListItemButton
-                        onClick={() => void openDetail(c)}
-                        divider
-                      >
-                        <ListItemAvatar>
-                          <Avatar
-                            sx={{
-                              bgcolor: "primary.light",
-                              color: "primary.main",
-                            }}
-                          >
-                            {initials(c)}
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={fullName(c)}
-                          secondary={c.phone_number || "—"}
-                          slotProps={{
-                            primary: { fontWeight: 600 },
-                            secondary: {
-                              dir: "ltr",
-                              sx: { textAlign: "start" },
-                            },
+                {recentContacts.map((c) => (
+                  <ListItem key={c.id} disablePadding>
+                    <ListItemButton onClick={() => void openDetail(c)} divider>
+                      <ListItemAvatar>
+                        <Avatar
+                          sx={{
+                            bgcolor: "primary.light",
+                            color: "primary.main",
                           }}
-                        />
-                        <ArrowBack fontSize="small" />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
+                        >
+                          {initials(c)}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={fullName(c)}
+                        secondary={c.phone_number || "—"}
+                        slotProps={{
+                          primary: { fontWeight: 600 },
+                          secondary: {
+                            dir: "ltr",
+                            sx: { textAlign: "start" },
+                          },
+                        }}
+                      />
+                      <ArrowBack fontSize="small" />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
               </List>
               {!loading && !contacts.length && (
                 <EmptyState

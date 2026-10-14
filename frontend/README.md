@@ -1,4 +1,4 @@
-# מרחב — Therapy CRM frontend
+# קליניקה — Therapy CRM frontend
 
 A Hebrew RTL therapist workspace built with React, TypeScript, MUI, FullCalendar, and Vite.
 The output is static HTML/CSS/JavaScript. FastAPI serves only the API.

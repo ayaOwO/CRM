@@ -12,7 +12,7 @@ import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Close from "@mui/icons-material/Close";
-import EditOutlined from "@mui/icons-material/EditOutlined";
+import Edit from "@mui/icons-material/Edit";
 import { dayFormat } from "../../lib/calendar";
 import { fullName, safeLink } from "../../lib/contacts";
 import type { Appointment, Contact, DeletionTarget } from "../../types";
@@ -124,7 +124,7 @@ export default function ClientDetailsDialog({
           מחיקת מטופל
         </Button>
         <Button
-          startIcon={<EditOutlined />}
+          startIcon={<Edit />}
           onClick={() => detail && editContact(detail)}
         >
           עריכה

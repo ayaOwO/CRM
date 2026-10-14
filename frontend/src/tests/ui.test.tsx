@@ -14,6 +14,7 @@ import CalendarView from "../views/CalendarView";
 import SettingsDialog from "../components/dialogs/SettingsDialog";
 import { createAppTheme, defaultThemeColor } from "../theme";
 import App from "../app/App";
+import DashboardView from "../views/DashboardView";
 
 const calendarRender = vi.hoisted(() => vi.fn());
 vi.mock(
@@ -45,8 +46,64 @@ describe("MUI interface", () => {
     );
     expect(html).toContain("ניווט ראשי");
     expect(html).toContain("טוענים נתונים");
-    expect(html).toContain("פגישות בשבוע הנבחר");
-    expect(html).toContain("מטופלים בקליניקה");
+    expect(html).toContain("גפישות השבוע");
+    expect(html).toContain("מטופלים אחרונים");
+  });
+  it("renders today's timeline and the five newest patients by creation date", () => {
+    const today = new Date();
+    today.setHours(10, 0, 0, 0);
+    const contacts = [2, 6, 1, 4, 3, 5].map((id) => ({
+      id,
+      first_name: `Patient${id}`,
+      last_name: "Example",
+      phone_number: null,
+      notes: null,
+      google_docs_link: null,
+      created_at: new Date(2026, 0, id).toISOString(),
+    }));
+    const html = renderToStaticMarkup(
+      <ThemeProvider theme={createAppTheme(defaultThemeColor)}>
+        <DashboardView
+          contacts={contacts}
+          appointments={[
+            {
+              id: 2,
+              guests: [],
+              location: "LateLocation",
+              start_time: new Date(+today + 3600000).toISOString(),
+              end_time: new Date(+today + 7200000).toISOString(),
+            },
+            {
+              id: 1,
+              guests: [],
+              location: "EarlyLocation",
+              start_time: today.toISOString(),
+              end_time: new Date(+today + 3600000).toISOString(),
+            },
+          ]}
+          start={today}
+          loading={false}
+          guests={() => "Meeting guest"}
+          editAppointment={vi.fn()}
+          editContact={vi.fn()}
+          openDetail={vi.fn()}
+          onShowCalendar={vi.fn()}
+          onShowClients={vi.fn()}
+        />
+      </ThemeProvider>,
+    );
+    expect(html).toContain("MuiTimeline-root");
+    expect(html).toContain("ChairIcon");
+    expect(html.indexOf("EarlyLocation")).toBeLessThan(
+      html.indexOf("LateLocation"),
+    );
+    expect(html).not.toContain("Patient1");
+    for (let id = 6; id > 2; id--) {
+      expect(html.indexOf(`Patient${id}`)).toBeLessThan(
+        html.indexOf(`Patient${id - 1}`),
+      );
+    }
+    expect(contacts.map((contact) => contact.id)).toEqual([2, 6, 1, 4, 3, 5]);
   });
   it("renders FullCalendar with an appointment, time, location, and Hebrew toolbar", () => {
     const anchor = new Date(2026, 9, 11, 10);

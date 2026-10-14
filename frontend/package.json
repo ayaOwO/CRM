@@ -18,6 +18,7 @@
     "@fullcalendar/mui": "^7.1.1",
     "@fullcalendar/react": "^7.1.1",
     "@mui/icons-material": "^7.0.0",
+    "@mui/lab": "7.0.1-beta.25",
     "@mui/material": "^7.0.0",
     "@mui/stylis-plugin-rtl": "^7.0.0",
     "@mui/x-date-pickers": "^9.15.0",

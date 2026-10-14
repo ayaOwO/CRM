@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import EditOutlined from "@mui/icons-material/EditOutlined";
+import Edit from "@mui/icons-material/Edit";
 import { time } from "../lib/calendar";
 import type { Appointment } from "../types";
 
@@ -45,7 +45,7 @@ export default function AppointmentRow({
           {a.location}
         </Typography>
       </Box>
-      <EditOutlined fontSize="small" />
+      <Edit fontSize="small" />
     </Button>
   );
 }

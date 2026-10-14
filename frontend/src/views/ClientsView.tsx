@@ -10,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import EditOutlined from "@mui/icons-material/EditOutlined";
+import Edit from "@mui/icons-material/Edit";
 import { fullName, matchesContactName, initials } from "../lib/contacts";
 import type { Contact } from "../types";
 import EmptyState from "../components/EmptyState";
@@ -80,7 +80,7 @@ export default function ClientsView({
                       aria-label={`עריכת ${fullName(c)}`}
                       onClick={() => editContact(c)}
                     >
-                      <EditOutlined fontSize="small" />
+                      <Edit fontSize="small" />
                     </IconButton>
                   </Stack>
                   <Typography

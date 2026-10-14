@@ -13,7 +13,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import DeleteOutline from "@mui/icons-material/DeleteOutline";
+import Delete from "@mui/icons-material/Delete";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import dayjs from "dayjs";
 import {
@@ -200,7 +200,7 @@ export default function AppointmentDialog({
             <Button
               color="error"
               disabled={busy}
-              startIcon={<DeleteOutline />}
+              startIcon={<Delete />}
               onClick={() => {
                 askDelete(
                   "appointments",
