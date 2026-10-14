@@ -32,7 +32,10 @@ app = FastAPI(lifespan=lifespan)
 
 logfire.configure(service_name="crm", environment=get_settings().logfire_environment)
 logfire.instrument_pydantic_ai(include_content=False, include_binary_content=False)
-logfire.instrument_fastapi(app)
+# Keep patient data out of validated argument and validation error telemetry.
+logfire.instrument_fastapi(
+    app, request_attributes_mapper=lambda _request, _attributes: None
+)
 logfire.instrument_system_metrics()
 
 app.include_router(contacts.router)
