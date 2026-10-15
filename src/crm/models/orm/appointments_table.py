@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import TIMESTAMP, CheckConstraint, Text
+from sqlalchemy import TIMESTAMP, CheckConstraint, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from crm.models.orm.appointment_guests_table import AppointmentGuestsTable
@@ -14,6 +14,7 @@ class AppointmentsTable(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     location: Mapped[str] = mapped_column(Text)
     start_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), index=True)
     end_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
