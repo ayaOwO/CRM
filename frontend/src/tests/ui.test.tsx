@@ -46,7 +46,7 @@ describe("MUI interface", () => {
     );
     expect(html).toContain("ניווט ראשי");
     expect(html).toContain("טוענים נתונים");
-    expect(html).toContain("גפישות השבוע");
+    expect(html).toContain("פגישות השבוע");
     expect(html).toContain("מטופלים אחרונים");
   });
   it("renders today's timeline and the five newest patients by creation date", () => {

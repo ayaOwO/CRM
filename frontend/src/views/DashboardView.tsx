@@ -73,7 +73,7 @@ export default function DashboardView({
             color="text.secondary"
             sx={{ fontSize: { xs: 12, md: 16 } }}
           >
-            גפישות השבוע
+            פגישות השבוע
           </Typography>
           <Typography
             variant="h3"
