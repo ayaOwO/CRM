@@ -1,6 +1,5 @@
 services:
   backend:
-    entrypoint: fastapi
     build: .
     env_file: .env
     extra_hosts:
@@ -9,6 +8,7 @@ services:
       - "127.0.0.1:8080:8080"
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
     ports:
       - "127.0.0.1:80:80"

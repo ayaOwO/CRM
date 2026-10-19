@@ -12,4 +12,4 @@ COPY src ./src
 RUN uv sync --locked
 
 EXPOSE 8080
-ENTRYPOINT ["fastapi", "run", "./src/crm/main.py", "--port", "8080"]
+ENTRYPOINT ["fastapi", "run", "--port", "8080"]
