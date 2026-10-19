@@ -13,4 +13,5 @@ class UsersTable(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True)
     email: Mapped[str] = mapped_column(String(200), unique=True)
+    password: Mapped[str | None] = mapped_column(String())
     settings: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
