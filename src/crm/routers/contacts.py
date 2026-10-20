@@ -4,13 +4,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
 from crm.data import AbstractContactStore
-from crm.dependencies import get_contact_store
+from crm.dependencies import get_contact_store, get_current_user
+from crm.models import User
 from crm.models.contacts import Contact
 from crm.models.requests.contact_create import ContactCreate
 from crm.models.requests.contact_update import ContactUpdate
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 ContactStore = Annotated[AbstractContactStore, Depends(get_contact_store)]
+UserInfo = Annotated[User, Depends(get_current_user)]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

@@ -4,13 +4,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import AwareDatetime
 
 from crm.data import AbstractAppointmentStore
-from crm.dependencies import get_appointment_store
+from crm.dependencies import get_appointment_store, get_current_user
+from crm.models import User
 from crm.models.appointments import Appointment
 from crm.models.requests.appointment_create import AppointmentCreate
 from crm.models.requests.appointment_update import AppointmentUpdate
 
-router = APIRouter(prefix="/appointments", tags=["appointments"])
+router = APIRouter(
+    prefix="/appointments",
+    tags=["appointments"],
+)
 AppointmentStore = Annotated[AbstractAppointmentStore, Depends(get_appointment_store)]
+UserInfo = Annotated[User, Depends(get_current_user)]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -34,20 +39,20 @@ async def list_appointments(
     return await store.list_appointments(start_time, end_time)
 
 
-@router.get("/{id}")
-async def get_appointment(id: int, store: AppointmentStore) -> Appointment:
-    appointment = await store.get_appointment(id)
+@router.get("/{appointment_id}")
+async def get_appointment(appointment_id: int, store: AppointmentStore) -> Appointment:
+    appointment = await store.get_appointment(appointment_id)
     if appointment is None:
         raise HTTPException(status_code=404, detail="Appointment not found")
     return appointment
 
 
-@router.patch("/{id}")
+@router.patch("/{appointment_id}")
 async def update_appointment(
-    id: int, appointment: AppointmentUpdate, store: AppointmentStore
+    appointment_id: int, appointment: AppointmentUpdate, store: AppointmentStore
 ) -> Appointment:
     try:
-        saved = await store.update_appointment(id, appointment)
+        saved = await store.update_appointment(appointment_id, appointment)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     if saved is None:
@@ -55,7 +60,7 @@ async def update_appointment(
     return saved
 
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_appointment(id: int, store: AppointmentStore) -> None:
-    if not await store.delete_appointment(id):
+@router.delete("/{appointment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_appointment(appointment_id: int, store: AppointmentStore) -> None:
+    if not await store.delete_appointment(appointment_id):
         raise HTTPException(status_code=404, detail="Appointment not found")

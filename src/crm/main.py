@@ -2,13 +2,14 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import logfire
-from fastapi import FastAPI, Response
+from fastapi import Depends, FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
 from scalar_fastapi import add_scalar_reference
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from crm.data import SqlContactStore
+from crm.data import SqlContactStore, SqlUserStore
 from crm.data.sql_appointment_store import SqlAppointmentStore
 from crm.dependencies import get_settings
 from crm.routers import appointments, contacts
@@ -23,6 +24,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.session_factory = session_factory
         app.state.contact_store = SqlContactStore(session_factory)
         app.state.appointment_store = SqlAppointmentStore(session_factory)
+        app.state.user_store = SqlUserStore(session_factory)
         yield
     finally:
         await engine.dispose()
@@ -38,8 +40,9 @@ logfire.instrument_fastapi(
 )
 logfire.instrument_system_metrics()
 
-app.include_router(contacts.router)
-app.include_router(appointments.router)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+app.include_router(contacts.router, dependencies=[Depends(oauth2_scheme)])
+app.include_router(appointments.router, dependencies=[Depends(oauth2_scheme)])
 
 app.add_middleware(
     CORSMiddleware,
