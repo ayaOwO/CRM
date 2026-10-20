@@ -12,7 +12,7 @@ class AbstractAppointmentStore(ABC):
         pass
 
     @abstractmethod
-    async def get_appointment(self, id: int) -> Appointment | None:
+    async def get_appointment(self, appointment_id: int) -> Appointment | None:
         pass
 
     @abstractmethod
@@ -23,10 +23,10 @@ class AbstractAppointmentStore(ABC):
 
     @abstractmethod
     async def update_appointment(
-        self, id: int, update: AppointmentUpdate
+        self, appointment_id: int, update: AppointmentUpdate
     ) -> Appointment | None:
         pass
 
     @abstractmethod
-    async def delete_appointment(self, id: int) -> bool:
+    async def delete_appointment(self, appointment_id: int) -> bool:
         pass

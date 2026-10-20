@@ -52,16 +52,17 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             row = AppointmentsTable(
                 **appointment.model_dump(exclude={"guests"}),
                 guest_links=[
-                    AppointmentGuestsTable(contact_id=id) for id in appointment.guests
+                    AppointmentGuestsTable(contact_id=contact_id)
+                    for contact_id in appointment.guests
                 ],
             )
             session.add(row)
             await session.flush()
             return self._response(row)
 
-    async def get_appointment(self, id: int) -> Appointment | None:
+    async def get_appointment(self, appointment_id: int) -> Appointment | None:
         async with self.session_maker() as session:
-            row = await session.get(AppointmentsTable, id)
+            row = await session.get(AppointmentsTable, appointment_id)
             return self._response(row) if row is not None else None
 
     async def list_appointments(
@@ -80,13 +81,13 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             return [self._response(row) for row in await session.scalars(query)]
 
     async def update_appointment(
-        self, id: int, update: AppointmentUpdate
+        self, appointment_id: int, update: AppointmentUpdate
     ) -> Appointment | None:
         async with self.session_maker() as session, session.begin():
             row = (
                 await session.scalars(
                     select(AppointmentsTable)
-                    .where(AppointmentsTable.id == id)
+                    .where(AppointmentsTable.id == appointment_id)
                     .with_for_update()
                 )
             ).one_or_none()
@@ -100,22 +101,22 @@ class SqlAppointmentStore(AbstractAppointmentStore):
                 await self._validate_guests(session, merged.guests)
                 existing = {link.contact_id: link for link in row.guest_links}
                 row.guest_links = [
-                    existing[id]
-                    if id in existing
-                    else AppointmentGuestsTable(contact_id=id)
-                    for id in merged.guests
+                    existing[contact_id]
+                    if contact_id in existing
+                    else AppointmentGuestsTable(contact_id=contact_id)
+                    for contact_id in merged.guests
                 ]
             for field, value in merged.model_dump(exclude={"guests"}).items():
                 setattr(row, field, value)
             await session.flush()
             return self._response(row)
 
-    async def delete_appointment(self, id: int) -> bool:
+    async def delete_appointment(self, appointment_id: int) -> bool:
         async with self.session_maker() as session, session.begin():
             row = (
                 await session.scalars(
                     select(AppointmentsTable)
-                    .where(AppointmentsTable.id == id)
+                    .where(AppointmentsTable.id == appointment_id)
                     .with_for_update()
                 )
             ).one_or_none()
