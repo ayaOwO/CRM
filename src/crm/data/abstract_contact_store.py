@@ -7,31 +7,33 @@ from crm.models.requests.contact_update import ContactUpdate
 
 class AbstractContactStore(ABC):
     @abstractmethod
-    async def add_contact(self, contact: ContactCreate) -> Contact:
+    async def add_contact(self, contact: ContactCreate, *, user_id: int) -> Contact:
         pass
 
     @abstractmethod
-    async def delete_contact(self, contact_id: int) -> bool:
+    async def delete_contact(self, contact_id: int, *, user_id: int) -> bool:
         pass
 
     @abstractmethod
     async def replace_contact(
-        self, contact_id: int, contact: ContactCreate
+        self, contact_id: int, contact: ContactCreate, *, user_id: int
     ) -> Contact | None:
         pass
 
     @abstractmethod
     async def update_contact(
-        self, contact_id: int, contact: ContactUpdate
+        self, contact_id: int, contact: ContactUpdate, *, user_id: int
     ) -> Contact | None:
         pass
 
     @abstractmethod
-    async def get_all_contacts(self) -> list[Contact]:
+    async def get_all_contacts(self, *, user_id: int) -> list[Contact]:
         pass
 
     @abstractmethod
-    async def get_contact_by_id(self, contact_id: int) -> Contact | None:
+    async def get_contact_by_id(
+        self, contact_id: int, *, user_id: int
+    ) -> Contact | None:
         pass
 
     @abstractmethod
@@ -40,5 +42,7 @@ class AbstractContactStore(ABC):
         first_name: str | None = None,
         last_name: str | None = None,
         notes: str | None = None,
+        *,
+        user_id: int,
     ) -> list[Contact]:
         pass

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from crm.data.abstract_user_store import AbstractUserStore
 from crm.models import User, UserCreate, UsersTable
+from crm.models.orm import users_table
 
 
 class SqlUserStore(AbstractUserStore):
@@ -19,9 +20,13 @@ class SqlUserStore(AbstractUserStore):
             await session.commit()
             return saved
 
-    async def get_user(self, username: str, with_password=False) -> User | None:
+    async def get_user(self, identifier: str | int, with_password=False) -> User | None:
+        column = UsersTable.id if isinstance(identifier, int) else UsersTable.username
         async with self.session_maker() as session:
-            query = Select(UsersTable).where(UsersTable.username == username)
+
+            query = Select(UsersTable).where(UsersTable.id == identifier)
+            if type(identifier) == int:
+                query = Select(UsersTable).where(UsersTable.id == identifier)
             user = await session.scalar(query)
         if user is not None:
             model = User.model_validate(user)

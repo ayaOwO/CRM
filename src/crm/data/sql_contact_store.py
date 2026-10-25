@@ -12,11 +12,11 @@ class SqlContactStore(AbstractContactStore):
     def __init__(self, session_maker: async_sessionmaker[AsyncSession]):
         self.session_maker = session_maker
 
-    async def add_contact(self, contact: ContactCreate) -> Contact:
+    async def add_contact(self, contact: ContactCreate, *, user_id: int) -> Contact:
         async with self.session_maker() as session:
             insert_contact = (
                 insert(ContactsTable)
-                .values(**contact.model_dump())
+                .values(**contact.model_dump(), user_id=user_id)
                 .returning(ContactsTable)
             )
             saved = Contact.model_validate(
@@ -25,10 +25,10 @@ class SqlContactStore(AbstractContactStore):
             await session.commit()
             return saved
 
-    async def delete_contact(self, contact_id: int) -> bool:
+    async def delete_contact(self, contact_id: int, *, user_id: int) -> bool:
         delete_query = (
             delete(ContactsTable)
-            .where(ContactsTable.id == contact_id)
+            .where(ContactsTable.id == contact_id, ContactsTable.user_id == user_id)
             .returning(ContactsTable.id)
         )
         async with self.session_maker() as session:
@@ -37,12 +37,12 @@ class SqlContactStore(AbstractContactStore):
             return deleted_id is not None
 
     async def replace_contact(
-        self, contact_id: int, contact: ContactCreate
+        self, contact_id: int, contact: ContactCreate, *, user_id: int
     ) -> Contact | None:
         replace_query = (
             update(ContactsTable)
-            .where(ContactsTable.id == contact_id)
-            .values(**contact.model_dump())
+            .where(ContactsTable.id == contact_id, ContactsTable.user_id == user_id)
+            .values(**contact.model_dump(), user_id=user_id)
             .returning(ContactsTable)
         )
         async with self.session_maker() as session:
@@ -52,14 +52,14 @@ class SqlContactStore(AbstractContactStore):
             return saved
 
     async def update_contact(
-        self, contact_id: int, contact: ContactUpdate
+        self, contact_id: int, contact: ContactUpdate, *, user_id: int
     ) -> Contact | None:
         changes = contact.model_dump(exclude_unset=True)
         if not changes:
-            return await self.get_contact_by_id(contact_id)
+            return await self.get_contact_by_id(contact_id, user_id=user_id)
         update_query = (
             update(ContactsTable)
-            .where(ContactsTable.id == contact_id)
+            .where(ContactsTable.id == contact_id, ContactsTable.user_id == user_id)
             .values(**changes)
             .returning(ContactsTable)
         )
@@ -69,12 +69,18 @@ class SqlContactStore(AbstractContactStore):
             await session.commit()
             return saved
 
-    async def get_all_contacts(self) -> list[Contact]:
-        return await self.search_contacts()
+    async def get_all_contacts(self, *, user_id: int) -> list[Contact]:
+        return await self.search_contacts(user_id=user_id)
 
-    async def get_contact_by_id(self, contact_id: int) -> Contact | None:
+    async def get_contact_by_id(
+        self, contact_id: int, *, user_id: int
+    ) -> Contact | None:
         async with self.session_maker() as session:
-            contact = await session.get(ContactsTable, contact_id)
+            contact = await session.scalar(
+                select(ContactsTable).where(
+                    ContactsTable.id == contact_id, ContactsTable.user_id == user_id
+                )
+            )
         return Contact.model_validate(contact) if contact is not None else None
 
     async def search_contacts(
@@ -82,8 +88,11 @@ class SqlContactStore(AbstractContactStore):
         first_name: str | None = None,
         last_name: str | None = None,
         notes: str | None = None,
+        *,
+        user_id: int,
     ) -> list[Contact]:
         search_query = select(ContactsTable).where(
+            ContactsTable.user_id == user_id,
             ContactsTable.first_name == first_name.strip()
             if first_name and first_name.strip()
             else True,

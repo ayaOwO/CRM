@@ -32,13 +32,15 @@ class SqlAppointmentStore(AbstractAppointmentStore):
         )
 
     @staticmethod
-    async def _validate_guests(session: AsyncSession, guests: list[int]) -> None:
+    async def _validate_guests(
+        session: AsyncSession, guests: list[int], user_id: int
+    ) -> None:
         if not guests:
             return
         found = set(
             await session.scalars(
                 select(ContactsTable.id)
-                .where(ContactsTable.id.in_(guests))
+                .where(ContactsTable.id.in_(guests), ContactsTable.user_id == user_id)
                 .with_for_update(read=True, key_share=True)
             )
         )
@@ -46,10 +48,13 @@ class SqlAppointmentStore(AbstractAppointmentStore):
         if missing:
             raise ValueError(f"Unknown contact IDs: {missing}")
 
-    async def add_appointment(self, appointment: AppointmentCreate) -> Appointment:
+    async def add_appointment(
+        self, appointment: AppointmentCreate, *, user_id: int
+    ) -> Appointment:
         async with self.session_maker() as session, session.begin():
-            await self._validate_guests(session, appointment.guests)
+            await self._validate_guests(session, appointment.guests, user_id)
             row = AppointmentsTable(
+                user_id=user_id,
                 **appointment.model_dump(exclude={"guests"}),
                 guest_links=[
                     AppointmentGuestsTable(contact_id=contact_id)
@@ -60,16 +65,29 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             await session.flush()
             return self._response(row)
 
-    async def get_appointment(self, appointment_id: int) -> Appointment | None:
+    async def get_appointment(
+        self, appointment_id: int, *, user_id: int
+    ) -> Appointment | None:
         async with self.session_maker() as session:
-            row = await session.get(AppointmentsTable, appointment_id)
+            row = await session.scalar(
+                select(AppointmentsTable).where(
+                    AppointmentsTable.id == appointment_id,
+                    AppointmentsTable.user_id == user_id,
+                )
+            )
             return self._response(row) if row is not None else None
 
     async def list_appointments(
-        self, start_time: datetime | None = None, end_time: datetime | None = None
+        self,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        *,
+        user_id: int,
     ) -> list[Appointment]:
-        query = select(AppointmentsTable).order_by(
-            AppointmentsTable.start_time, AppointmentsTable.id
+        query = (
+            select(AppointmentsTable)
+            .where(AppointmentsTable.user_id == user_id)
+            .order_by(AppointmentsTable.start_time, AppointmentsTable.id)
         )
         if start_time is not None:
             query = query.where(
@@ -81,13 +99,16 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             return [self._response(row) for row in await session.scalars(query)]
 
     async def update_appointment(
-        self, appointment_id: int, update: AppointmentUpdate
+        self, appointment_id: int, update: AppointmentUpdate, *, user_id: int
     ) -> Appointment | None:
         async with self.session_maker() as session, session.begin():
             row = (
                 await session.scalars(
                     select(AppointmentsTable)
-                    .where(AppointmentsTable.id == appointment_id)
+                    .where(
+                        AppointmentsTable.id == appointment_id,
+                        AppointmentsTable.user_id == user_id,
+                    )
                     .with_for_update()
                 )
             ).one_or_none()
@@ -98,7 +119,7 @@ class SqlAppointmentStore(AbstractAppointmentStore):
                 self._response(row).model_dump(exclude={"id"}) | changes
             )
             if "guests" in changes:
-                await self._validate_guests(session, merged.guests)
+                await self._validate_guests(session, merged.guests, user_id)
                 existing = {link.contact_id: link for link in row.guest_links}
                 row.guest_links = [
                     existing[contact_id]
@@ -111,12 +132,15 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             await session.flush()
             return self._response(row)
 
-    async def delete_appointment(self, appointment_id: int) -> bool:
+    async def delete_appointment(self, appointment_id: int, *, user_id: int) -> bool:
         async with self.session_maker() as session, session.begin():
             row = (
                 await session.scalars(
                     select(AppointmentsTable)
-                    .where(AppointmentsTable.id == appointment_id)
+                    .where(
+                        AppointmentsTable.id == appointment_id,
+                        AppointmentsTable.user_id == user_id,
+                    )
                     .with_for_update()
                 )
             ).one_or_none()

@@ -10,5 +10,5 @@ class AbstractUserStore(ABC):
         pass
 
     @abstractmethod
-    async def get_user(self, username: str, with_password=False) -> User | None:
+    async def get_user(self, identifier: str | int, with_password=False) -> User | None:
         pass
