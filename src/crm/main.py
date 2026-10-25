@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from crm.data import SqlContactStore, SqlUserStore
 from crm.data.sql_appointment_store import SqlAppointmentStore
 from crm.dependencies import get_settings
-from crm.routers import appointments, contacts
+from crm.routers import appointments, contacts, credentials
 
 
 @asynccontextmanager
@@ -43,6 +43,7 @@ logfire.instrument_system_metrics()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 app.include_router(contacts.router, dependencies=[Depends(oauth2_scheme)])
 app.include_router(appointments.router, dependencies=[Depends(oauth2_scheme)])
+app.include_router(credentials.router, dependencies=[Depends(oauth2_scheme)])
 
 app.add_middleware(
     CORSMiddleware,

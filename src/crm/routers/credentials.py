@@ -5,8 +5,6 @@ import jwt
 from argon2 import PasswordHasher
 from fastapi import APIRouter, Depends, status, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from pygments.lexers.robotframework import Setting
-
 from crm.data import AbstractUserStore
 from crm.dependencies import get_user_store, get_settings
 from crm.models import UserCreate, Settings
@@ -22,7 +20,7 @@ async def create_contact(create_request: UserCreate, store: UserStore):
 
 @router.post("/login", status_code=status.HTTP_200_OK)
 async def login(settings: Annotated[Settings, get_settings], form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-                store: UserStore) -> dict[str, Any]:
+                store: UserStore) -> tuple[dict[str, Any], Any]:
     user = await store.get_user(form_data.username, with_password=True)
     hasher = PasswordHasher()
     if not user or user.password is None:
@@ -30,5 +28,9 @@ async def login(settings: Annotated[Settings, get_settings], form_data: Annotate
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     hasher.verify(user.password, form_data.password)
 
-    token = jwt.encode(, algorithm, datetime.now(timezone.utc) + settings.access_token_expire_minutes)
-    return (user.settings, token)
+    current_utc_time = datetime.now(tz=timezone.utc)
+    token = jwt.encode(
+        {"sub": user.id, "iat": current_utc_time, "exp": current_utc_time + settings.access_token_expire_minutes},
+        settings.secret_key,
+        settings.algorithm)
+    return user.settings, token
