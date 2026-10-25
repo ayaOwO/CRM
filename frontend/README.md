@@ -14,7 +14,7 @@ npm run dev
 ```
 
 Open the URL printed by Vite (normally `http://localhost:5173`). Requests to
-`/contacts` and `/appointments` are proxied to `http://127.0.0.1:8000`.
+`/auth`, `/contacts`, and `/appointments` are proxied to `http://127.0.0.1:8000`.
 
 ```sh
 npm test
@@ -116,25 +116,30 @@ appointments starting before the range end and filters overlaps locally to
 include overnight appointments. Large datasets will need an overlap query
 and pagination in a future backend iteration.
 
-## Work left: Step 2
+## Authentication
 
-Settings and Google sign-in are explicitly marked placeholders. This version
-has no authentication or approved-user enforcement. Use synthetic data for
-an unauthenticated public preview.
+The MUI login/signup screens use the existing Hebrew RTL theme. Signup sends
+`{username, email, password}` as JSON to `POST /auth/signup`, then returns to
+login with a success message. Login sends multipart `FormData` containing `username` and `password`
+to `POST /auth/login` and expects the current `[settings, token]` response.
+The token is sent as `Authorization: Bearer ...` on CRM requests. The workspace
+mounts only after login; logout or a CRM 401 unmounts it and clears its data.
 
-Next, configure a Google OAuth web client for the final deployment origins,
-verify Google ID tokens on the server (signature, audience, issuer, expiry),
-and admit only explicitly approved emails. Use Google's `sub` as the stable
-account identity, require an appropriate verified-email policy, establish
-secure HttpOnly sessions with CSRF protection, and enforce authentication
-on every CRM endpoint. Google login does not grant access to Google Docs;
-the current document link simply opens in a new tab.
+Credentials use tab-scoped `sessionStorage` (memory only if storage is blocked).
+They survive refresh and are removed on logout; passwords are never persisted.
+Server settings are retained in the session; the local theme preference remains
+in use until a server settings schema is defined. There is no refresh-token or
+password-reset endpoint in the current API.
 
-Still required for deployment: the actual backend HTTPS URL, the chosen
-static hosting project, and public request-path verification. Still required
-for authentication: the Google client configuration and approved-user list.
-Theme/timezone preferences, user management UI, drag-and-drop scheduling,
-and calendar synchronization are deferred.
+Proxy `/auth/*` alongside the CRM routes on same-domain hosts. Nginx, Vite, and
+the Vercel example include it. For Render add `/auth/*` →
+`https://YOUR-BACKEND.example/auth/*` as a rewrite.
+
+Frontend checks mock the API contract. Live authentication still requires backend
+repairs: the login settings parameter lacks `Depends`, username lookup compares
+against the ID column, password failures are not translated to 401, and the JWT
+subject is emitted as an integer while the decoder expects a string. Signup
+uniqueness failures also need a defined HTTP conflict response.
 
 Project-level guidance is installed under `.agents/skills/`:
 `vercel-react-best-practices`, `material-ui-styling`, and `material-ui-theming`.
