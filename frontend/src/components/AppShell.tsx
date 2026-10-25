@@ -16,7 +16,7 @@ import Typography from "@mui/material/Typography";
 import Add from "@mui/icons-material/Add";
 import Chair from "@mui/icons-material/Chair";
 import Dashboard from "@mui/icons-material/Dashboard";
-import Google from "@mui/icons-material/Google";
+import Logout from "@mui/icons-material/Logout";
 import Group from "@mui/icons-material/Group";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import Settings from "@mui/icons-material/Settings";
@@ -30,12 +30,16 @@ const names: Record<Page, string> = {
   calendar: "יומן פגישות",
 };
 export default function AppShell({
+  username,
+  onLogout,
   page,
   onPageChange,
   onSettings,
   onCreate,
   children,
 }: {
+  username: string;
+  onLogout: () => void;
   page: Page;
   onPageChange: (page: Page) => void;
   onSettings: () => void;
@@ -112,10 +116,15 @@ export default function AppShell({
           </Button>
           <Divider sx={{ my: 2 }} />
           <Typography variant="caption" color="text.secondary">
-            התחברות מאובטחת — בשלב הבא
+            מחוברים בתור {username}
           </Typography>
-          <Button fullWidth disabled startIcon={<Google />} sx={{ mt: 1 }}>
-            התחברות עם Google
+          <Button
+            fullWidth
+            onClick={onLogout}
+            startIcon={<Logout />}
+            sx={{ mt: 1 }}
+          >
+            התנתקות
           </Button>
         </Box>
       </Drawer>
@@ -136,6 +145,13 @@ export default function AppShell({
           </Typography>
           <Button startIcon={<Settings />} onClick={onSettings}>
             הגדרות
+          </Button>
+          <Button
+            onClick={onLogout}
+            aria-label={`התנתקות של ${username}`}
+            startIcon={<Logout />}
+          >
+            התנתקות
           </Button>
         </Toolbar>
         {navigation}
@@ -185,7 +201,7 @@ export default function AppShell({
           variant="caption"
           color="text.secondary"
         >
-          קליניקה · ניהול קליניקה · התחברות Google תתווסף בשלב הבא
+          קליניקה · ניהול קליניקה וטיפול
         </Typography>
       </Container>
     </Stack>

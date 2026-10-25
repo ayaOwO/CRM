@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { CacheProvider } from "@emotion/react";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -13,8 +13,15 @@ import {
   rtlCache,
 } from "../theme";
 import App from "./App";
+import AuthView from "../views/AuthView";
+import { getSession, subscribeSession, setSession } from "../lib/session";
 
 export default function AppRoot() {
+  const session = useSyncExternalStore(
+    subscribeSession,
+    getSession,
+    () => null,
+  );
   const [themeColor, setThemeColor] = useState(readThemeColor);
   const [themeSaveError, setThemeSaveError] = useState(false);
   const theme = useMemo(() => createAppTheme(themeColor), [themeColor]);
@@ -33,11 +40,18 @@ export default function AppRoot() {
             heIL.components.MuiLocalizationProvider.defaultProps.localeText
           }
         >
-          <App
-            themeColor={themeColor}
-            onThemeColorChange={changeThemeColor}
-            themeSaveError={themeSaveError}
-          />
+          {session ? (
+            <App
+              key={session.token}
+              username={session.username}
+              onLogout={() => setSession(null)}
+              themeColor={themeColor}
+              onThemeColorChange={changeThemeColor}
+              themeSaveError={themeSaveError}
+            />
+          ) : (
+            <AuthView />
+          )}
         </LocalizationProvider>
       </ThemeProvider>
     </CacheProvider>

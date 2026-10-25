@@ -38,6 +38,8 @@ describe("MUI interface", () => {
     const html = renderToStaticMarkup(
       <ThemeProvider theme={createAppTheme(defaultThemeColor)}>
         <App
+          username="therapist"
+          onLogout={vi.fn()}
           themeColor={defaultThemeColor}
           onThemeColorChange={vi.fn()}
           themeSaveError={false}

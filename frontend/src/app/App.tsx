@@ -17,10 +17,14 @@ import { weekStart, appointmentRange } from "../lib/calendar";
 import type { Page } from "../types";
 
 export default function App({
+  username,
+  onLogout,
   themeColor,
   onThemeColorChange,
   themeSaveError,
 }: {
+  username: string;
+  onLogout: () => void;
   themeColor: string;
   onThemeColorChange: (color: string) => void;
   themeSaveError: boolean;
@@ -47,6 +51,8 @@ export default function App({
   return (
     <>
       <AppShell
+        username={username}
+        onLogout={onLogout}
         page={page}
         onPageChange={setPage}
         onSettings={() => setSettings(true)}
