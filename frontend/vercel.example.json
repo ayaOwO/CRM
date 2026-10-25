@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/auth/:path*",
+      "destination": "https://YOUR-BACKEND.example/auth/:path*"
+    },
+    {
       "source": "/contacts",
       "destination": "https://YOUR-BACKEND.example/contacts"
     },
