@@ -16,4 +16,4 @@ class Settings(BaseSettings):
     secret_key: str = Field()
     algorithm: str = Field(default="HS256")
     access_token_expire_minutes: timedelta = Field(default=timedelta(minutes=60 * 24 * 7))
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
