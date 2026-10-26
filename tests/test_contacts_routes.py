@@ -9,11 +9,13 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from user_scope_support import create_schema
 
+from crm.dependencies import get_current_user
 from crm.main import app
-from crm.models.orm.base import Base
 from crm.models.requests.appointment_create import AppointmentCreate
 from crm.models.settings import Settings
+from crm.models.user import User
 
 
 class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
@@ -40,11 +42,48 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
             connection.execute("PRAGMA foreign_keys=ON")
 
         async with engine.begin() as connection:
-            await connection.run_sync(Base.metadata.create_all)
+            await create_schema(connection)
+        app.dependency_overrides[get_current_user] = lambda: User(
+            id=1, username="owner", email="owner@example.com"
+        )
+        self.addCleanup(app.dependency_overrides.pop, get_current_user)
         self.client = httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app), base_url="http://test"
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://test",
+            headers={"Authorization": "Bearer test"},
         )
         self.addAsyncCleanup(self.client.aclose)
+
+    async def test_user_isolation(self):
+        saved = (
+            await self.client.post(
+                "/contacts", json={"first_name": "Private", "last_name": "Contact"}
+            )
+        ).json()
+        app.dependency_overrides[get_current_user] = lambda: User(
+            id=2, username="other", email="other@example.com"
+        )
+        self.assertEqual((await self.client.get("/contacts")).json(), [])
+        self.assertEqual(
+            (
+                await self.client.get("/contacts", params={"first_name": "Private"})
+            ).json(),
+            [],
+        )
+        path = f"/contacts/{saved['id']}"
+        for method, payload in (
+            ("GET", {}),
+            ("PUT", {"first_name": "Stolen", "last_name": "Contact"}),
+            ("PATCH", {}),
+            ("PATCH", {"notes": "changed"}),
+            ("DELETE", {}),
+        ):
+            response = await self.client.request(method, path, json=payload)
+            self.assertEqual(response.status_code, 404, response.text)
+        app.dependency_overrides[get_current_user] = lambda: User(
+            id=1, username="owner", email="owner@example.com"
+        )
+        self.assertEqual((await self.client.get(path)).json(), saved)
 
     async def test_crud_and_validation(self):
         self.assertEqual((await self.client.get("/contacts")).json(), [])
@@ -199,14 +238,15 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
                     "start_time": "2026-10-11T09:00:00Z",
                     "end_time": "2026-10-11T10:00:00Z",
                 }
-            )
+            ),
+            user_id=1,
         )
         response = await self.client.delete(f"/contacts/{contact['id']}")
         self.assertEqual(response.status_code, 409)
         self.assertEqual(
             (await self.client.get(f"/contacts/{contact['id']}")).status_code, 200
         )
-        await app.state.appointment_store.delete_appointment(appointment.id)
+        await app.state.appointment_store.delete_appointment(appointment.id, user_id=1)
         self.assertEqual(
             (await self.client.delete(f"/contacts/{contact['id']}")).status_code, 204
         )

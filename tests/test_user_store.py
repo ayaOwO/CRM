@@ -42,6 +42,19 @@ class UserStoreTest(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(PasswordHasher().verify(password_hash, request.password))
             self.assertEqual(user, saved)
             self.assertEqual((await store.get_user(request.username)).password, "")
+            self.assertEqual(await store.get_user(saved.id, with_password=True), saved)
+            self.assertEqual((await store.get_user(saved.id)).password, "")
+            self.assertIsNone(await store.get_user(saved.id + 1))
+            self.assertIsNone(await store.get_user(saved.id + 1, with_password=True))
+            numeric_name = await store.create_user(
+                request.model_copy(
+                    update={"username": str(saved.id), "email": "numeric@example.com"}
+                )
+            )
+            self.assertEqual(
+                await store.get_user(str(saved.id), with_password=True), numeric_name
+            )
+            self.assertEqual(await store.get_user(saved.id, with_password=True), saved)
             self.assertIsNone(await store.get_user("missing"))
             self.assertIsNone(await store.get_user("missing", with_password=True))
             with self.assertRaises(IntegrityError):
