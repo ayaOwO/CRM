@@ -15,5 +15,7 @@ class Settings(BaseSettings):
     google_client_secret: str = Field()
     secret_key: str = Field()
     algorithm: str = Field(default="HS256")
-    access_token_expire_minutes: timedelta = Field(default=timedelta(minutes=60 * 24 * 7))
+    access_token_expire_minutes: timedelta = Field(
+        default=timedelta(minutes=60 * 24 * 7)
+    )
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

@@ -1,6 +1,6 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-import logging
 
 import logfire
 from fastapi import Depends, FastAPI, Response
@@ -35,7 +35,8 @@ app = FastAPI(lifespan=lifespan)
 
 logfire.configure(service_name="crm", environment=get_settings().logfire_environment)
 logging.getLogger().addHandler(logfire.LogfireLoggingHandler())
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
+logging.getLogger("crm").setLevel(logging.DEBUG)
 logfire.instrument_pydantic_ai(include_content=False, include_binary_content=False)
 # Keep patient data out of validated argument and validation error telemetry.
 logfire.instrument_fastapi(

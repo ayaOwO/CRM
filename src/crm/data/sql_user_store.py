@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from crm.data.abstract_user_store import AbstractUserStore
 from crm.models import User, UserCreate, UsersTable
-from crm.models.orm import users_table
+
+logger = logging.getLogger(__name__)
 
 
 class SqlUserStore(AbstractUserStore):
@@ -29,11 +30,11 @@ class SqlUserStore(AbstractUserStore):
         else:
             column = UsersTable.username
             identifier = identifier.lower()
-        logging.debug("Looking up user by %s", column.key)
+        logger.debug("Looking up user by %s", column.key)
         async with self.session_maker() as session:
             query = Select(UsersTable).where(column == identifier)
             user = await session.scalar(query)
-        logging.debug("User lookup found=%s", user is not None)
+        logger.debug("User lookup found=%s", user is not None)
         if user is not None:
             model = User.model_validate(user)
             if not with_password:
