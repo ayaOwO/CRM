@@ -1,5 +1,8 @@
+import logging
+from typing import Any
+
 from argon2 import PasswordHasher
-from sqlalchemy import Select, insert
+from sqlalchemy import Select, insert, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from crm.data.abstract_user_store import AbstractUserStore
@@ -21,13 +24,16 @@ class SqlUserStore(AbstractUserStore):
             return saved
 
     async def get_user(self, identifier: str | int, with_password=False) -> User | None:
-        column = UsersTable.id if isinstance(identifier, int) else UsersTable.username
+        if isinstance(identifier, int):
+            column = UsersTable.id
+        else:
+            column = UsersTable.username
+            identifier = identifier.lower()
+        logging.debug("Looking up user by %s", column.key)
         async with self.session_maker() as session:
-
-            query = Select(UsersTable).where(UsersTable.id == identifier)
-            if type(identifier) == int:
-                query = Select(UsersTable).where(UsersTable.id == identifier)
+            query = Select(UsersTable).where(column == identifier)
             user = await session.scalar(query)
+        logging.debug("User lookup found=%s", user is not None)
         if user is not None:
             model = User.model_validate(user)
             if not with_password:
@@ -35,3 +41,17 @@ class SqlUserStore(AbstractUserStore):
             return model
         else:
             return None
+
+    async def set_user_settings(
+        self, user_id: int, settings: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        async with self.session_maker() as session:
+            query = (
+                update(UsersTable)
+                .where(UsersTable.id == user_id)
+                .values(settings=settings)
+                .returning(UsersTable.settings)
+            )
+            saved = await session.scalar(query)
+            await session.commit()
+            return saved

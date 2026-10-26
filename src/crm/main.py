@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+import logging
 
 import logfire
 from fastapi import Depends, FastAPI, Response
@@ -12,7 +13,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from crm.data import SqlContactStore, SqlUserStore
 from crm.data.sql_appointment_store import SqlAppointmentStore
 from crm.dependencies import get_settings
-from crm.routers import appointments, contacts, credentials
+from crm.routers import appointments, contacts, credentials, user
 
 
 @asynccontextmanager
@@ -33,6 +34,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(lifespan=lifespan)
 
 logfire.configure(service_name="crm", environment=get_settings().logfire_environment)
+logging.getLogger().addHandler(logfire.LogfireLoggingHandler())
+logging.getLogger().setLevel(logging.DEBUG)
 logfire.instrument_pydantic_ai(include_content=False, include_binary_content=False)
 # Keep patient data out of validated argument and validation error telemetry.
 logfire.instrument_fastapi(
@@ -43,7 +46,8 @@ logfire.instrument_system_metrics()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 app.include_router(contacts.router, dependencies=[Depends(oauth2_scheme)])
 app.include_router(appointments.router, dependencies=[Depends(oauth2_scheme)])
-app.include_router(credentials.router, dependencies=[Depends(oauth2_scheme)])
+app.include_router(credentials.router)
+app.include_router(user.router)
 
 app.add_middleware(
     CORSMiddleware,
