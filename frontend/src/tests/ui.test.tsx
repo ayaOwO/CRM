@@ -42,7 +42,10 @@ describe("MUI interface", () => {
           onLogout={vi.fn()}
           themeColor={defaultThemeColor}
           onThemeColorChange={vi.fn()}
-          themeSaveError={false}
+          themeSaveError=""
+          themeSaving={false}
+          themeDirty={false}
+          onSaveTheme={vi.fn()}
         />
       </ThemeProvider>,
     );
@@ -201,7 +204,10 @@ describe("MUI interface", () => {
       onClose: vi.fn(),
       themeColor: "#245c50",
       onThemeColorChange: onChange,
-      themeSaveError: false,
+      themeSaveError: "",
+      themeSaving: false,
+      themeDirty: false,
+      onSaveTheme: vi.fn(),
     });
     const sliders: ReactElement<{
       onChange: (event: Event, value: number) => void;

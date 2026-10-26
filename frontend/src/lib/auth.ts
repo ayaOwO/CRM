@@ -5,20 +5,24 @@ export async function login(username: string, password: string) {
   const form = new FormData();
   form.set("username", username);
   form.set("password", password);
-  // FastAPI serializes the current (settings, token) tuple as a JSON array.
-  const result = await api<unknown>("/auth/login", "POST", form);
-  if (
-    !Array.isArray(result) ||
-    result.length !== 2 ||
-    !result[0] ||
-    typeof result[0] !== "object" ||
-    Array.isArray(result[0]) ||
-    typeof result[1] !== "string" ||
-    !result[1]
-  ) {
+  const token = await api<unknown>("/auth/login", "POST", form);
+  if (typeof token !== "string" || !token.trim()) {
     throw new Error("השרת החזיר תשובת התחברות לא תקינה. נסו שוב.");
   }
-  setSession({ username, settings: result[0], token: result[1] });
+  const settings = await api<unknown>(
+    "/user/settings",
+    "GET",
+    undefined,
+    token,
+  );
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    throw new Error("לא ניתן לטעון את הגדרות החשבון. נסו להתחבר שוב.");
+  }
+  setSession({
+    username,
+    settings: settings as Record<string, unknown>,
+    token,
+  });
 }
 
 export async function signup(

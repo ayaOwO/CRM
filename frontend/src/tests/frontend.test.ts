@@ -11,13 +11,7 @@ import {
 } from "../lib/calendar";
 import { matchesContactName, safeLink } from "../lib/contacts";
 import type { Appointment, Contact } from "../types";
-import {
-  createAppTheme,
-  defaultThemeColor,
-  readThemeColor,
-  saveThemeColor,
-  themeColorStorageKey,
-} from "../theme";
+import { createAppTheme, defaultThemeColor, readThemeColor } from "../theme";
 const localDate = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 function event(id: number, start: Date, end: Date): Appointment {
@@ -36,32 +30,14 @@ const hour = (date: Date, h: number) => {
 };
 afterEach(() => vi.unstubAllGlobals());
 describe("theme preferences", () => {
-  it("restores a saved color and rejects malformed stored values", () => {
-    const values = new Map<string, string>();
-    vi.stubGlobal("localStorage", {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => values.set(key, value),
-    });
+  it("reads each account's saved color and rejects malformed settings", () => {
+    expect(readThemeColor({ themeColor: "#663399" })).toBe("#663399");
+    expect(readThemeColor({ themeColor: "#245c50" })).toBe("#245c50");
+    for (const themeColor of [null, 123, "broken", "#123", "#1234567"]) {
+      expect(readThemeColor({ themeColor })).toBe(defaultThemeColor);
+    }
+    expect(readThemeColor({})).toBe(defaultThemeColor);
     expect(readThemeColor()).toBe(defaultThemeColor);
-    expect(saveThemeColor("#663399")).toBe(true);
-    expect(readThemeColor()).toBe("#663399");
-    expect(createAppTheme(readThemeColor()).palette.primary.main).toBe(
-      "#663399",
-    );
-    values.set(themeColorStorageKey, "broken");
-    expect(readThemeColor()).toBe(defaultThemeColor);
-  });
-  it("uses the default and reports persistence failure when storage is blocked", () => {
-    vi.stubGlobal("localStorage", {
-      getItem: () => {
-        throw new Error("Storage blocked");
-      },
-      setItem: () => {
-        throw new Error("Storage blocked");
-      },
-    });
-    expect(readThemeColor()).toBe(defaultThemeColor);
-    expect(saveThemeColor("#663399")).toBe(false);
   });
   it("updates theme tints while preserving RTL and component defaults", () => {
     const original = createAppTheme(defaultThemeColor);

@@ -57,38 +57,25 @@ export default function DashboardView({
     .slice(0, 5);
   return (
     <>
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Avatar
-            sx={{
-              float: "left",
-              bgcolor: "primary.light",
-              color: "primary.main",
-              display: { xs: "none", md: "flex" },
-            }}
-          >
-            <Chair />
-          </Avatar>
-          <Typography
-            color="text.secondary"
-            sx={{ fontSize: { xs: 12, md: 16 } }}
-          >
-            פגישות השבוע
-          </Typography>
-          <Typography
-            variant="h3"
-            sx={{ my: 1, fontWeight: 700, fontSize: { xs: 32, md: 48 } }}
-          >
-            {loading
-              ? "—"
-              : appointments.filter(
-                  (a) =>
-                    +new Date(a.start_time) >= +start &&
-                    +new Date(a.start_time) < +shiftDay(start, 7),
-                ).length}
-          </Typography>
-        </CardContent>
-      </Card>
+      <Stack direction="row" spacing={1.5} alignItems="baseline" sx={{ mb: 3 }}>
+        <Typography color="text.secondary">פגישות השבוע</Typography>
+        <Typography
+          component="span"
+          sx={{
+            fontWeight: 700,
+            fontSize: 24,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {loading
+            ? "—"
+            : appointments.filter(
+                (a) =>
+                  +new Date(a.start_time) >= +start &&
+                  +new Date(a.start_time) < +shiftDay(start, 7),
+              ).length}
+        </Typography>
+      </Stack>
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card>
@@ -100,7 +87,9 @@ export default function DashboardView({
                 spacing={2}
                 sx={{ mb: 2.5 }}
               >
-                <Typography variant="h6">הפגישות של היום</Typography>
+                <Typography component="h2" variant="h6">
+                  הפגישות של היום
+                </Typography>
                 <Button onClick={onShowCalendar}>ליומן</Button>
               </Stack>
               {!!todayAppointments.length && (
@@ -136,14 +125,24 @@ export default function DashboardView({
                               color="text.secondary"
                               component="div"
                               dir="ltr"
-                              sx={{ textAlign: "start" }}
+                              sx={{
+                                textAlign: "start",
+                                fontVariantNumeric: "tabular-nums",
+                              }}
                             >
                               {time(a.start_time)}–{time(a.end_time)}
                             </Typography>
-                            <Typography fontWeight={700}>
+                            <Typography
+                              fontWeight={700}
+                              sx={{ overflowWrap: "anywhere" }}
+                            >
                               {guests(a)}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ overflowWrap: "anywhere" }}
+                            >
                               {a.location}
                             </Typography>
                           </Box>
@@ -168,7 +167,9 @@ export default function DashboardView({
         <Grid size={{ xs: 12, lg: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6">מטופלים אחרונים</Typography>
+              <Typography component="h2" variant="h6">
+                מטופלים אחרונים
+              </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 חמשת המטופלים שנוספו לאחרונה
               </Typography>
@@ -190,7 +191,10 @@ export default function DashboardView({
                         primary={fullName(c)}
                         secondary={c.phone_number || "—"}
                         slotProps={{
-                          primary: { fontWeight: 600 },
+                          primary: {
+                            fontWeight: 600,
+                            sx: { overflowWrap: "anywhere" },
+                          },
                           secondary: {
                             dir: "ltr",
                             sx: { textAlign: "start" },

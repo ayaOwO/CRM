@@ -17,18 +17,29 @@ export default function SettingsDialog({
   themeColor,
   onThemeColorChange,
   themeSaveError,
+  themeSaving,
+  themeDirty,
+  onSaveTheme,
 }: {
   open: boolean;
   onClose: () => void;
   themeColor: string;
   onThemeColorChange: (color: string) => void;
-  themeSaveError: boolean;
+  themeSaveError: string;
+  themeSaving: boolean;
+  themeDirty: boolean;
+  onSaveTheme: () => void;
 }) {
   const channels = [1, 3, 5].map((offset) =>
     parseInt(themeColor.slice(offset, offset + 2), 16),
   );
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <Dialog
+      open={open}
+      onClose={themeSaving ? undefined : onClose}
+      fullWidth
+      maxWidth="xs"
+    >
       <DialogTitle>הגדרות</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
@@ -54,6 +65,7 @@ export default function SettingsDialog({
                 min={0}
                 max={255}
                 step={1}
+                disabled={themeSaving}
                 valueLabelDisplay="auto"
                 onChange={(_, value) => {
                   const updated = [...channels];
@@ -69,31 +81,35 @@ export default function SettingsDialog({
             fullWidth
             label="צבע נבחר"
             value={themeColor}
-            helperText="הצבע מתעדכן מיד ונשמר בדפדפן זה."
+            helperText="הצבע מוצג מיד. לחצו על שמירה כדי לשמור בחשבון."
             slotProps={{ input: { readOnly: true }, htmlInput: { dir: "ltr" } }}
           />
         </Stack>
         <Button
           onClick={() => onThemeColorChange(defaultThemeColor)}
+          disabled={themeSaving}
           sx={{ mb: 2 }}
         >
           שחזור צבע ברירת המחדל
         </Button>
         {themeSaveError && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            הצבע עודכן, אך לא ניתן לשמור אותו בדפדפן זה.
+          <Alert severity="error" sx={{ mb: 2 }}>
+            לא ניתן לשמור את הצבע בחשבון. {themeSaveError}
           </Alert>
         )}
-        <Typography sx={{ mb: 2 }}>
-          התחברות Google ורשימת משתמשים מאושרים
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          הדשבורד זמין כרגע ללא התחברות. בשלב הבא הגישה תאושר בשרת למשתמשים
-          ספציפיים בלבד.
-        </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>סגירה</Button>
+        <Button onClick={onClose} disabled={themeSaving}>
+          סגירה
+        </Button>
+        <Button
+          variant="contained"
+          onClick={onSaveTheme}
+          loading={themeSaving}
+          disabled={!themeDirty}
+        >
+          שמירה
+        </Button>
       </DialogActions>
     </Dialog>
   );

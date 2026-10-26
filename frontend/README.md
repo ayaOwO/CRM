@@ -14,7 +14,7 @@ npm run dev
 ```
 
 Open the URL printed by Vite (normally `http://localhost:5173`). Requests to
-`/auth`, `/contacts`, and `/appointments` are proxied to `http://127.0.0.1:8000`.
+`/auth`, `/user`, `/contacts`, and `/appointments` are proxied to `http://127.0.0.1:8000`.
 
 ```sh
 npm test
@@ -81,10 +81,12 @@ Uses [Render static-site rewrite rules](https://render.com/docs/redirects-rewrit
 
 - Create a **Static Site**, root directory `frontend`, build command
   `npm ci && npm run build`, and publish directory `dist`.
-- Configure these four **Rewrite** rules in the static site's Redirects/Rewrites:
+- Configure these **Rewrite** rules in the static site's Redirects/Rewrites:
 
 | Source            | Destination                                   |
 | ----------------- | --------------------------------------------- |
+| `/auth/*`         | `https://YOUR-BACKEND.example/auth/*`         |
+| `/user/*`         | `https://YOUR-BACKEND.example/user/*`         |
 | `/contacts`       | `https://YOUR-BACKEND.example/contacts`       |
 | `/contacts/*`     | `https://YOUR-BACKEND.example/contacts/*`     |
 | `/appointments`   | `https://YOUR-BACKEND.example/appointments`   |
@@ -121,25 +123,28 @@ and pagination in a future backend iteration.
 The MUI login/signup screens use the existing Hebrew RTL theme. Signup sends
 `{username, email, password}` as JSON to `POST /auth/signup`, then returns to
 login with a success message. Login sends multipart `FormData` containing `username` and `password`
-to `POST /auth/login` and expects the current `[settings, token]` response.
+to `POST /auth/login` and expects a JSON token string. It then fetches
+`GET /user/settings` with that bearer token and expects a settings object.
+The session is created only after both requests succeed; failures leave the
+login form available for retry.
 The token is sent as `Authorization: Bearer ...` on CRM requests. The workspace
 mounts only after login; logout or a CRM 401 unmounts it and clears its data.
 
 Credentials use tab-scoped `sessionStorage` (memory only if storage is blocked).
 They survive refresh and are removed on logout; passwords are never persisted.
-Server settings are retained in the session; the local theme preference remains
-in use until a server settings schema is defined. There is no refresh-token or
-password-reset endpoint in the current API.
+The theme color comes from the account's `themeColor` setting (a six-digit hex
+color, default `#245c50`). Sliders preview immediately; the Settings dialog's Save
+button sends `PUT /user/settings` with the existing preferences and the new
+color. The endpoint replaces the authenticated user's settings object and
+returns the committed settings. Save failures retain the preview for retry.
+The color is restored from the server on the next login, including on another
+browser. There is no refresh-token or password-reset endpoint in the current API.
 
-Proxy `/auth/*` alongside the CRM routes on same-domain hosts. Nginx, Vite, and
-the Vercel example include it. For Render add `/auth/*` →
-`https://YOUR-BACKEND.example/auth/*` as a rewrite.
+Proxy `/auth/*` and `/user/*` alongside the CRM routes on same-domain hosts.
+Nginx, Vite, and the Vercel example include both routes.
 
-Frontend checks mock the API contract. Live authentication still requires backend
-repairs: the login settings parameter lacks `Depends`, username lookup compares
-against the ID column, password failures are not translated to 401, and the JWT
-subject is emitted as an integer while the decoder expects a string. Signup
-uniqueness failures also need a defined HTTP conflict response.
+Frontend checks mock this API contract. Live authentication requires the backend
+to provide these responses and accept the token on protected requests.
 
 Project-level guidance is installed under `.agents/skills/`:
 `vercel-react-best-practices`, `material-ui-styling`, and `material-ui-theming`.

@@ -148,6 +148,7 @@ export default function AuthView() {
               slotProps={{
                 inputLabel: { shrink: true },
                 htmlInput: {
+                  dir: "ltr",
                   maxLength: 50,
                   pattern: ".*\\S.*",
                   autoCapitalize: "none",
@@ -188,6 +189,7 @@ export default function AuthView() {
               size="medium"
               slotProps={{
                 inputLabel: { shrink: true },
+                htmlInput: { dir: "ltr" },
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
@@ -225,7 +227,10 @@ export default function AuthView() {
                     ? "הסיסמאות אינן תואמות. הזינו שוב את הסיסמה שבחרתם."
                     : undefined
                 }
-                slotProps={{ inputLabel: { shrink: true } }}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  htmlInput: { dir: "ltr" },
+                }}
               />
             )}
             <Button
@@ -260,7 +265,7 @@ export default function AuthView() {
           display: { xs: "none", md: "flex" },
           bgcolor: "primary.main",
           color: "primary.contrastText",
-          borderRadius: 3,
+          borderRadius: 1,
           p: { md: 6, lg: 9 },
           justifyContent: "center",
         }}

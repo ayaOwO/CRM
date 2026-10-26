@@ -5,24 +5,11 @@ import { createTheme, lighten, darken, alpha } from "@mui/material/styles";
 import { heIL } from "@mui/material/locale";
 
 export const defaultThemeColor = "#245c50";
-export const themeColorStorageKey = "crm.themeColor";
-
-export function readThemeColor() {
-  try {
-    const color = localStorage.getItem(themeColorStorageKey);
-    return color && /^#[\da-f]{6}$/i.test(color) ? color : defaultThemeColor;
-  } catch {
-    return defaultThemeColor;
-  }
-}
-
-export function saveThemeColor(color: string) {
-  try {
-    localStorage.setItem(themeColorStorageKey, color);
-    return true;
-  } catch {
-    return false;
-  }
+export function readThemeColor(settings?: Record<string, unknown>) {
+  const color = settings?.themeColor;
+  return typeof color === "string" && /^#[\da-f]{6}$/i.test(color)
+    ? color
+    : defaultThemeColor;
 }
 
 export const createAppTheme = (color: string) =>

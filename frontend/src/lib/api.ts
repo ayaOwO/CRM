@@ -4,9 +4,10 @@ export async function api<T>(
   path: string,
   method = "GET",
   body?: unknown,
+  accessToken?: string,
 ): Promise<T> {
   const authRequest = path.startsWith("/auth/");
-  const token = authRequest ? undefined : getSession()?.token;
+  const token = authRequest ? undefined : (accessToken ?? getSession()?.token);
   const headers: Record<string, string> = {};
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined && !(body instanceof FormData))

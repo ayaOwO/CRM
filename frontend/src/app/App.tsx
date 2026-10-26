@@ -22,12 +22,18 @@ export default function App({
   themeColor,
   onThemeColorChange,
   themeSaveError,
+  themeSaving,
+  themeDirty,
+  onSaveTheme,
 }: {
   username: string;
   onLogout: () => void;
   themeColor: string;
   onThemeColorChange: (color: string) => void;
-  themeSaveError: boolean;
+  themeSaveError: string;
+  themeSaving: boolean;
+  themeDirty: boolean;
+  onSaveTheme: () => void;
 }) {
   const [page, setPage] = useState<Page>("home");
   const [anchor, setAnchor] = useState(() => new Date());
@@ -140,6 +146,9 @@ export default function App({
         themeColor={themeColor}
         onThemeColorChange={onThemeColorChange}
         themeSaveError={themeSaveError}
+        themeSaving={themeSaving}
+        themeDirty={themeDirty}
+        onSaveTheme={onSaveTheme}
       />
       <Snackbar
         open={!!toast}

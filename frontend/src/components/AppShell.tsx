@@ -7,6 +7,8 @@ import Drawer from "@mui/material/Drawer";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Container from "@mui/material/Container";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -20,7 +22,6 @@ import Logout from "@mui/icons-material/Logout";
 import Group from "@mui/icons-material/Group";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import Settings from "@mui/icons-material/Settings";
-import Spa from "@mui/icons-material/Spa";
 import { dayFormat } from "../lib/calendar";
 import type { Page } from "../types";
 
@@ -69,6 +70,7 @@ export default function AppShell({
             borderRadius: 1,
             flex: { xs: 1, md: "initial" },
             px: { xs: 1, md: 2 },
+            minHeight: 48,
             mb: { md: 1 },
           }}
         >
@@ -84,7 +86,7 @@ export default function AppShell({
     </List>
   );
   return (
-    <Stack direction={{ xs: "column", md: "row" }} sx={{ minHeight: "100vh" }}>
+    <Stack direction={{ xs: "column", md: "row" }} sx={{ minHeight: "100dvh" }}>
       <Drawer
         variant="permanent"
         anchor="left"
@@ -106,16 +108,17 @@ export default function AppShell({
             </Typography>
           </Box>
         </Stack>
-        <Typography sx={{ px: 1.5 }} variant="overline" color="text.secondary">
-          קליניקה העבודה
-        </Typography>
         {navigation}
         <Box sx={{ mt: "auto", pt: 4 }}>
           <Button fullWidth startIcon={<Settings />} onClick={onSettings}>
             הגדרות
           </Button>
           <Divider sx={{ my: 2 }} />
-          <Typography variant="caption" color="text.secondary">
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ overflowWrap: "anywhere" }}
+          >
             מחוברים בתור {username}
           </Typography>
           <Button
@@ -139,20 +142,28 @@ export default function AppShell({
         }}
       >
         <Toolbar>
-          <Spa color="primary" sx={{ mr: 1 }} />
+          <PsychologyIcon color="primary" sx={{ mr: 1 }} />
           <Typography variant="h5" sx={{ flex: 1 }}>
             קליניקה
           </Typography>
-          <Button startIcon={<Settings />} onClick={onSettings}>
-            הגדרות
-          </Button>
-          <Button
-            onClick={onLogout}
-            aria-label={`התנתקות של ${username}`}
-            startIcon={<Logout />}
-          >
-            התנתקות
-          </Button>
+          <Tooltip title="הגדרות">
+            <IconButton
+              aria-label="הגדרות"
+              onClick={onSettings}
+              sx={{ width: 44, height: 44 }}
+            >
+              <Settings />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="התנתקות">
+            <IconButton
+              onClick={onLogout}
+              aria-label={`התנתקות של ${username}`}
+              sx={{ width: 44, height: 44 }}
+            >
+              <Logout />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
         {navigation}
       </AppBar>
@@ -170,14 +181,15 @@ export default function AppShell({
           sx={{ mb: 1, flexWrap: "wrap" }}
         >
           <Box>
-            <Typography variant="body2" color="text.secondary">
-              {dayFormat.format(now)}
-            </Typography>
             <Typography
+              component="h1"
               variant="h4"
-              sx={{ mt: 1, fontSize: { xs: 26, md: 34 } }}
+              sx={{ fontSize: { xs: 26, md: 34 } }}
             >
               {names[page]}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {dayFormat.format(now)}
             </Typography>
           </Box>
           <Button
@@ -196,13 +208,6 @@ export default function AppShell({
               : "תכנון השבוע וניהול הפגישות בקליניקה."}
         </Typography>
         {children}
-        <Typography
-          sx={{ display: "block", textAlign: "center", mt: 4.5 }}
-          variant="caption"
-          color="text.secondary"
-        >
-          קליניקה · ניהול קליניקה וטיפול
-        </Typography>
       </Container>
     </Stack>
   );
