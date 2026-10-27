@@ -94,10 +94,10 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             return [self._response(row) for row in await session.scalars(query)]
 
     async def update_appointment(
-        self, appointment_id: int, update: AppointmentUpdate, *, user_id: int
+            self, appointment_id: int, update: AppointmentUpdate, *, user_id: int
     ) -> Appointment | None:
         async with self.session_maker() as session, session.begin():
-            row = (
+            row: AppointmentsTable | None = (
                 await session.scalars(
                     select(AppointmentsTable)
                     .where(
@@ -116,14 +116,15 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             if "guests" in changes:
                 await self._validate_guests(session, merged.guests, user_id)
                 existing = {link.contact_id: link for link in row.guest_links}
-                row.guest_links = [
-                    existing[contact_id]
-                    if contact_id in existing
-                    else AppointmentGuestsTable(contact_id=contact_id)
-                    for contact_id in merged.guests
-                ]
-            for field, value in merged.model_dump(exclude={"guests"}).items():
-                setattr(row, field, value)
+                row.guest_links = []
+                for contact_id in merged.guests:
+                    guest = AppointmentGuestsTable(contact_id=contact_id)
+                    if contact_id in existing:
+                        guest = existing[contact_id]
+                    row.guest_links.append(guest)
+            row.location = merged.location
+            row.start_time = merged.start_time
+            row.end_time = merged.end_time
             await session.flush()
             return self._response(row)
 
