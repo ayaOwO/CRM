@@ -22,9 +22,11 @@ from crm.routers.appointments import router
 
 
 class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
-    window = {"start_time": "2026-01-01T00:00:00Z", "end_time": "2028-01-01T00:00:00Z"}
-
     async def asyncSetUp(self):
+        self.window = {
+            "start_time": "2026-01-01T00:00:00Z",
+            "end_time": "2028-01-01T00:00:00Z",
+        }
         # Set this only to a disposable PostgreSQL database: tests clear their rows.
         url = os.environ.get("CRM_TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
         self.engine = create_async_engine(url)
@@ -104,7 +106,9 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
         self.app.dependency_overrides[get_current_user] = lambda: User(
             id=2, username="other", email="other@example.com"
         )
-        self.assertEqual((await self.client.get("/appointments", params=self.window)).json(), [])
+        self.assertEqual(
+            (await self.client.get("/appointments", params=self.window)).json(), []
+        )
         path = f"/appointments/{saved['id']}"
         for method, payload in (
             ("GET", {}),
@@ -133,7 +137,9 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
             id=1, username="owner", email="owner@example.com"
         )
         self.assertEqual((await self.client.get(path)).json(), saved)
-        self.assertEqual((await self.client.get("/appointments", params=self.window)).json(), [saved])
+        self.assertEqual(
+            (await self.client.get("/appointments", params=self.window)).json(), [saved]
+        )
 
     async def test_main_lifespan_wiring(self):
         from crm.main import app
@@ -196,7 +202,9 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
         path = f"/appointments/{saved['id']}"
         self.assertEqual(saved["start_time"], "2026-10-11T09:00:00Z")
         self.assertEqual((await self.client.get(path)).json(), saved)
-        self.assertEqual((await self.client.get("/appointments", params=self.window)).json(), [saved])
+        self.assertEqual(
+            (await self.client.get("/appointments", params=self.window)).json(), [saved]
+        )
         async with self.sessions() as session, session.begin():
             with self.assertRaises(IntegrityError):
                 async with session.begin_nested():
@@ -259,7 +267,9 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
         ):
             response = await self.client.post("/appointments", json=invalid)
             self.assertEqual(response.status_code, 422, response.text)
-        self.assertEqual((await self.client.get("/appointments", params=self.window)).json(), [])
+        self.assertEqual(
+            (await self.client.get("/appointments", params=self.window)).json(), []
+        )
         saved = []
         for hour in (11, 9, 10):
             response = await self.client.post(
@@ -286,7 +296,9 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
             ({"start_time": "2027-01-01T00:00:00Z"}, []),
         )
         for params, expected in cases:
-            response = await self.client.get("/appointments", params=self.window | params)
+            response = await self.client.get(
+                "/appointments", params=self.window | params
+            )
             self.assertEqual(response.status_code, 200, response.text)
             self.assertEqual(response.json(), expected)
         for params in (

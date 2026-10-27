@@ -29,7 +29,7 @@ class SqlAppointmentStore(AbstractAppointmentStore):
 
     @staticmethod
     async def _validate_guests(
-            session: AsyncSession, guests: list[int], user_id: int
+        session: AsyncSession, guests: list[int], user_id: int
     ) -> None:
         if not guests:
             return
@@ -45,7 +45,7 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             raise ValueError(f"Unknown contact IDs: {missing}")
 
     async def add_appointment(
-            self, appointment: AppointmentCreate, *, user_id: int
+        self, appointment: AppointmentCreate, *, user_id: int
     ) -> Appointment:
         async with self.session_maker() as session, session.begin():
             await self._validate_guests(session, appointment.guests, user_id)
@@ -62,7 +62,7 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             return self._response(row)
 
     async def get_appointment(
-            self, appointment_id: int, *, user_id: int
+        self, appointment_id: int, *, user_id: int
     ) -> Appointment | None:
         async with self.session_maker() as session:
             row: AppointmentsTable | None = await session.scalar(
@@ -74,18 +74,18 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             return self._response(row) if row is not None else None
 
     async def list_appointments(
-            self,
-            start_time: AwareDatetime,
-            end_time: AwareDatetime,
-            *,
-            user_id: int,
+        self,
+        start_time: AwareDatetime,
+        end_time: AwareDatetime,
+        *,
+        user_id: int,
     ) -> list[Appointment]:
         query = (
             select(AppointmentsTable)
             .where(
                 AppointmentsTable.user_id == user_id,
                 start_time.astimezone(UTC) <= AppointmentsTable.start_time,
-                AppointmentsTable.start_time < end_time.astimezone(UTC)
+                AppointmentsTable.start_time < end_time.astimezone(UTC),
             )
             .order_by(AppointmentsTable.start_time, AppointmentsTable.id)
         )
@@ -94,7 +94,7 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             return [self._response(row) for row in await session.scalars(query)]
 
     async def update_appointment(
-            self, appointment_id: int, update: AppointmentUpdate, *, user_id: int
+        self, appointment_id: int, update: AppointmentUpdate, *, user_id: int
     ) -> Appointment | None:
         async with self.session_maker() as session, session.begin():
             row: AppointmentsTable | None = (
