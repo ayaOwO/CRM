@@ -48,7 +48,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 app.include_router(contacts.router, dependencies=[Depends(oauth2_scheme)])
 app.include_router(appointments.router, dependencies=[Depends(oauth2_scheme)])
 app.include_router(credentials.router)
-app.include_router(user.router)
+app.include_router(user.router, dependencies=[Depends(oauth2_scheme)])
 
 app.add_middleware(
     CORSMiddleware,

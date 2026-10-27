@@ -118,9 +118,10 @@ class SqlAppointmentStore(AbstractAppointmentStore):
                 existing = {link.contact_id: link for link in row.guest_links}
                 row.guest_links = []
                 for contact_id in merged.guests:
-                    guest = AppointmentGuestsTable(contact_id=contact_id)
                     if contact_id in existing:
                         guest = existing[contact_id]
+                    else:
+                        guest = AppointmentGuestsTable(contact_id=contact_id)
                     row.guest_links.append(guest)
             row.location = merged.location
             row.start_time = merged.start_time
