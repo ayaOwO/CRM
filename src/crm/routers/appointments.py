@@ -32,10 +32,10 @@ async def create_appointment(
 async def list_appointments(
     store: AppointmentStore,
     user: UserInfo,
-    start_time: AwareDatetime | None = None,
-    end_time: AwareDatetime | None = None,
+    start_time: AwareDatetime,
+    end_time: AwareDatetime,
 ) -> list[Appointment]:
-    if start_time is not None and end_time is not None and end_time <= start_time:
+    if end_time <= start_time:
         raise HTTPException(status_code=422, detail="end_time must be after start_time")
     return await store.list_appointments(start_time, end_time, user_id=user.id)
 

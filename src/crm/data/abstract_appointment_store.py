@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+
+from pydantic import AwareDatetime
 
 from crm.models.appointments import Appointment
 from crm.models.requests.appointment_create import AppointmentCreate
@@ -22,8 +23,8 @@ class AbstractAppointmentStore(ABC):
     @abstractmethod
     async def list_appointments(
         self,
-        start_time: datetime | None = None,
-        end_time: datetime | None = None,
+        start_time: AwareDatetime,
+        end_time: AwareDatetime,
         *,
         user_id: int,
     ) -> list[Appointment]:
