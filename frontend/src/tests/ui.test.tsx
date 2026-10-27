@@ -38,15 +38,20 @@ describe("MUI interface", () => {
     const html = renderToStaticMarkup(
       <ThemeProvider theme={createAppTheme(defaultThemeColor)}>
         <App
+          username="therapist"
+          onLogout={vi.fn()}
           themeColor={defaultThemeColor}
           onThemeColorChange={vi.fn()}
-          themeSaveError={false}
+          themeSaveError=""
+          themeSaving={false}
+          themeDirty={false}
+          onSaveTheme={vi.fn()}
         />
       </ThemeProvider>,
     );
     expect(html).toContain("ניווט ראשי");
     expect(html).toContain("טוענים נתונים");
-    expect(html).toContain("גפישות השבוע");
+    expect(html).toContain("פגישות השבוע");
     expect(html).toContain("מטופלים אחרונים");
   });
   it("renders today's timeline and the five newest patients by creation date", () => {
@@ -199,7 +204,10 @@ describe("MUI interface", () => {
       onClose: vi.fn(),
       themeColor: "#245c50",
       onThemeColorChange: onChange,
-      themeSaveError: false,
+      themeSaveError: "",
+      themeSaving: false,
+      themeDirty: false,
+      onSaveTheme: vi.fn(),
     });
     const sliders: ReactElement<{
       onChange: (event: Event, value: number) => void;

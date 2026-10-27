@@ -17,13 +17,23 @@ import { weekStart, appointmentRange } from "../lib/calendar";
 import type { Page } from "../types";
 
 export default function App({
+  username,
+  onLogout,
   themeColor,
   onThemeColorChange,
   themeSaveError,
+  themeSaving,
+  themeDirty,
+  onSaveTheme,
 }: {
+  username: string;
+  onLogout: () => void;
   themeColor: string;
   onThemeColorChange: (color: string) => void;
-  themeSaveError: boolean;
+  themeSaveError: string;
+  themeSaving: boolean;
+  themeDirty: boolean;
+  onSaveTheme: () => void;
 }) {
   const [page, setPage] = useState<Page>("home");
   const [anchor, setAnchor] = useState(() => new Date());
@@ -47,6 +57,8 @@ export default function App({
   return (
     <>
       <AppShell
+        username={username}
+        onLogout={onLogout}
         page={page}
         onPageChange={setPage}
         onSettings={() => setSettings(true)}
@@ -134,6 +146,9 @@ export default function App({
         themeColor={themeColor}
         onThemeColorChange={onThemeColorChange}
         themeSaveError={themeSaveError}
+        themeSaving={themeSaving}
+        themeDirty={themeDirty}
+        onSaveTheme={onSaveTheme}
       />
       <Snackbar
         open={!!toast}

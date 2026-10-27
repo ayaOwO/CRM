@@ -2,24 +2,31 @@ import os
 import unittest
 from datetime import datetime
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
+import jwt
 from fastapi import FastAPI
 from sqlalchemy import delete, event, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from user_scope_support import create_schema
 
 from crm.data.sql_appointment_store import SqlAppointmentStore
+from crm.dependencies import get_current_user, get_settings
 from crm.models.orm.appointment_guests_table import AppointmentGuestsTable
 from crm.models.orm.appointments_table import AppointmentsTable
-from crm.models.orm.base import Base
 from crm.models.orm.contacts_table import ContactsTable
+from crm.models.user import User
 from crm.routers.appointments import router
 
 
 class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
+        self.window = {
+            "start_time": "2026-01-01T00:00:00Z",
+            "end_time": "2028-01-01T00:00:00Z",
+        }
         # Set this only to a disposable PostgreSQL database: tests clear their rows.
         url = os.environ.get("CRM_TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
         self.engine = create_async_engine(url)
@@ -31,24 +38,30 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
                 connection.execute("PRAGMA foreign_keys=ON")
 
         async with self.engine.begin() as connection:
-            await connection.run_sync(Base.metadata.create_all)
+            await create_schema(connection)
         self.sessions = async_sessionmaker(self.engine, expire_on_commit=False)
         async with self.sessions() as session, session.begin():
             await session.execute(delete(AppointmentGuestsTable))
             await session.execute(delete(AppointmentsTable))
             await session.execute(delete(ContactsTable))
             contacts = [
-                ContactsTable(first_name=name, last_name="Test")
+                ContactsTable(first_name=name, last_name="Test", user_id=1)
                 for name in ("Ada", "Grace")
             ]
             session.add_all(contacts)
             await session.flush()
             self.guests = [contact.id for contact in contacts]
         app = FastAPI()
+        self.app = app
         app.state.appointment_store = SqlAppointmentStore(self.sessions)
         app.include_router(router)
+        app.dependency_overrides[get_current_user] = lambda: User(
+            id=1, username="owner", email="owner@example.com"
+        )
         self.client = httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app), base_url="http://test"
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://test",
+            headers={"Authorization": "Bearer test"},
         )
         self.addAsyncCleanup(self.client.aclose)
         self.payload = {
@@ -58,9 +71,83 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
             "end_time": "2026-10-11T13:00:00+03:00",
         }
 
+    async def test_authenticated_user_id(self):
+        self.app.dependency_overrides.pop(get_current_user)
+        settings = SimpleNamespace(
+            secret_key="test-signing-key-at-least-32-bytes", algorithm="HS256"
+        )
+        self.app.dependency_overrides[get_settings] = lambda: settings
+        user = User(id=1, username="owner", email="owner@example.com")
+        self.app.state.user_store = SimpleNamespace(
+            get_user=AsyncMock(return_value=user)
+        )
+        response = await self.client.get(
+            "/appointments", headers={"Authorization": "Bearer invalid"}
+        )
+        self.assertEqual(response.status_code, 401)
+        response = await self.client.get("/appointments", headers={"Authorization": ""})
+        self.assertEqual(response.status_code, 401)
+        token = jwt.encode(
+            {"sub": "1"}, settings.secret_key, algorithm=settings.algorithm
+        )
+        headers = {"Authorization": f"Bearer {token}"}
+        response = await self.client.post(
+            "/appointments", json=self.payload, headers=headers
+        )
+        self.assertEqual(response.status_code, 201, response.text)
+        self.app.state.user_store.get_user.assert_awaited_once_with(1)
+        self.app.state.user_store.get_user.return_value = None
+        self.assertEqual(
+            (await self.client.get("/appointments", headers=headers)).status_code, 401
+        )
+
+    async def test_user_isolation(self):
+        saved = (await self.client.post("/appointments", json=self.payload)).json()
+        self.app.dependency_overrides[get_current_user] = lambda: User(
+            id=2, username="other", email="other@example.com"
+        )
+        self.assertEqual(
+            (await self.client.get("/appointments", params=self.window)).json(), []
+        )
+        path = f"/appointments/{saved['id']}"
+        for method, payload in (
+            ("GET", {}),
+            ("PATCH", {"location": "Changed"}),
+            ("DELETE", {}),
+        ):
+            response = await self.client.request(method, path, json=payload)
+            self.assertEqual(response.status_code, 404, response.text)
+        self.assertEqual(
+            (await self.client.post("/appointments", json=self.payload)).status_code,
+            422,
+        )
+        other = await self.client.post(
+            "/appointments", json=self.payload | {"guests": []}
+        )
+        self.assertEqual(other.status_code, 201, other.text)
+        self.assertEqual(
+            (
+                await self.client.patch(
+                    f"/appointments/{other.json()['id']}", json={"guests": self.guests}
+                )
+            ).status_code,
+            422,
+        )
+        self.app.dependency_overrides[get_current_user] = lambda: User(
+            id=1, username="owner", email="owner@example.com"
+        )
+        self.assertEqual((await self.client.get(path)).json(), saved)
+        self.assertEqual(
+            (await self.client.get("/appointments", params=self.window)).json(), [saved]
+        )
+
     async def test_main_lifespan_wiring(self):
         from crm.main import app
 
+        app.dependency_overrides[get_current_user] = lambda: User(
+            id=1, username="owner", email="owner@example.com"
+        )
+        self.addCleanup(app.dependency_overrides.pop, get_current_user)
         settings = SimpleNamespace(database_url=self.engine.url)
         with (
             patch("crm.main.get_settings", return_value=settings),
@@ -70,7 +157,9 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
                 async with app.state.session_factory() as session:
                     await session.connection()
                 async with httpx.AsyncClient(
-                    transport=httpx.ASGITransport(app=app), base_url="http://test"
+                    transport=httpx.ASGITransport(app=app),
+                    base_url="http://test",
+                    headers={"Authorization": "Bearer test"},
                 ) as client:
                     response = await client.post("/appointments", json=self.payload)
                     self.assertEqual(response.status_code, 201, response.text)
@@ -113,7 +202,9 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
         path = f"/appointments/{saved['id']}"
         self.assertEqual(saved["start_time"], "2026-10-11T09:00:00Z")
         self.assertEqual((await self.client.get(path)).json(), saved)
-        self.assertEqual((await self.client.get("/appointments")).json(), [saved])
+        self.assertEqual(
+            (await self.client.get("/appointments", params=self.window)).json(), [saved]
+        )
         async with self.sessions() as session, session.begin():
             with self.assertRaises(IntegrityError):
                 async with session.begin_nested():
@@ -176,7 +267,9 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
         ):
             response = await self.client.post("/appointments", json=invalid)
             self.assertEqual(response.status_code, 422, response.text)
-        self.assertEqual((await self.client.get("/appointments")).json(), [])
+        self.assertEqual(
+            (await self.client.get("/appointments", params=self.window)).json(), []
+        )
         saved = []
         for hour in (11, 9, 10):
             response = await self.client.post(
@@ -203,11 +296,16 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
             ({"start_time": "2027-01-01T00:00:00Z"}, []),
         )
         for params, expected in cases:
-            response = await self.client.get("/appointments", params=params)
+            response = await self.client.get(
+                "/appointments", params=self.window | params
+            )
             self.assertEqual(response.status_code, 200, response.text)
             self.assertEqual(response.json(), expected)
         for params in (
-            {"start_time": "2026-10-11T09:00:00"},
+            {},
+            {"start_time": self.window["start_time"]},
+            {"end_time": self.window["end_time"]},
+            self.window | {"start_time": "2026-10-11T09:00:00"},
             {"start_time": "2026-10-11T10:00:00Z", "end_time": "2026-10-11T09:00:00Z"},
             {"start_time": "2026-10-11T10:00:00Z", "end_time": "2026-10-11T10:00:00Z"},
         ):

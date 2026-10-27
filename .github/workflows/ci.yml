@@ -23,6 +23,9 @@ jobs:
       LOGFIRE_ENVIRONMENT: test
       LOGFIRE_SEND_TO_LOGFIRE: "false"
       CORS_ALLOWED_ORIGINS: "[]"
+      GOOGLE_CLIENT_ID: test
+      GOOGLE_CLIENT_SECRET: test
+      SECRET_KEY: "test-signing-key-at-least-32-bytes"
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7

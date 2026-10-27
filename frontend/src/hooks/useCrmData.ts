@@ -4,6 +4,11 @@ import { shiftDay } from "../lib/calendar";
 import { fullName } from "../lib/contacts";
 import type { Appointment, Contact } from "../types";
 
+const appointmentHistoryRange = {
+  start_time: "0001-01-01T00:00:00Z",
+  end_time: "9999-12-31T23:59:59.999999Z",
+};
+
 export default function useCrmData(rangeStart: Date, rangeEnd: Date) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -28,9 +33,12 @@ export default function useCrmData(rangeStart: Date, rangeEnd: Date) {
       today.setHours(0, 0, 0, 0);
       const tomorrow = shiftDay(today, 1);
       const until = new Date(Math.max(endTime, +tomorrow));
-      // ponytail: start-time filtering needs an unbounded lower range for
+      // ponytail: start-time filtering needs a full-history lower range for
       // overnight meetings. Add server-side overlap queries if volume grows.
-      const params = new URLSearchParams({ end_time: until.toISOString() });
+      const params = new URLSearchParams({
+        start_time: appointmentHistoryRange.start_time,
+        end_time: until.toISOString(),
+      });
       const [c, a] = await Promise.all([
         api<Contact[]>("/contacts"),
         api<Appointment[]>(`/appointments?${params}`),
@@ -69,7 +77,8 @@ export default function useCrmData(rangeStart: Date, rangeEnd: Date) {
     setHistoryError("");
     async function loadHistory() {
       try {
-        const list = await api<Appointment[]>("/appointments");
+        const params = new URLSearchParams(appointmentHistoryRange);
+        const list = await api<Appointment[]>(`/appointments?${params}`);
         if (active)
           setHistory(list.filter((a) => a.guests.includes(detailId!)));
       } catch (error) {
