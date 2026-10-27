@@ -23,6 +23,7 @@ class ContactStoreTest(unittest.IsolatedAsyncioTestCase):
                 google_docs_link="https://docs.google.com/document/d/example/edit",
             )
             saved = await store.add_contact(contact, user_id=1)
+            self.assertIsNotNone(saved.created_at.utcoffset())
             self.assertEqual(await store.get_all_contacts(user_id=2), [])
             self.assertIsNone(await store.get_contact_by_id(saved.id, user_id=2))
             self.assertIsNone(

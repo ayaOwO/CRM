@@ -19,16 +19,11 @@ class SqlAppointmentStore(AbstractAppointmentStore):
 
     @staticmethod
     def _response(row: AppointmentsTable) -> Appointment:
-        # Restore UTC for SQLite tests; PostgreSQL preserves timezone information.
         return Appointment(
             id=row.id,
             location=row.location,
-            start_time=row.start_time.replace(tzinfo=UTC)
-            if row.start_time.tzinfo is None
-            else row.start_time,
-            end_time=row.end_time.replace(tzinfo=UTC)
-            if row.end_time.tzinfo is None
-            else row.end_time,
+            start_time=row.start_time,
+            end_time=row.end_time,
             guests=[link.contact_id for link in row.guest_links],
         )
 

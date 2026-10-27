@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC
 from typing import Self
 
 from pydantic import AwareDatetime, BaseModel, Field, field_validator, model_validator
@@ -12,7 +12,7 @@ class AppointmentCreate(BaseModel):
 
     @field_validator("start_time", "end_time")
     @classmethod
-    def normalize_time(cls, value: datetime) -> datetime:
+    def normalize_time(cls, value: AwareDatetime) -> AwareDatetime:
         return value.astimezone(UTC)
 
     @field_validator("guests")
