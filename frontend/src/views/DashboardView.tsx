@@ -29,8 +29,7 @@ import {
 import { fullName, initials } from "../lib/contacts";
 import type { Appointment, Contact } from "../types";
 import EmptyState from "../components/EmptyState";
-
-const recentContactLimit = 5;
+import { uiConfig } from "../config";
 
 export default function DashboardView({
   contacts,
@@ -61,7 +60,7 @@ export default function DashboardView({
       (a, b) =>
         +new Date(b.created_at) - +new Date(a.created_at) || b.id - a.id,
     )
-    .slice(0, recentContactLimit);
+    .slice(0, uiConfig.recentContactLimit);
   return (
     <>
       <Stack direction="row" spacing={1.5} alignItems="baseline" sx={{ mb: 3 }}>

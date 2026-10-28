@@ -1,3 +1,8 @@
+export const uiConfig = {
+  toastDurationMs: 3500,
+  recentContactLimit: 5,
+};
+
 export const backendHealthConfig = {
   timeoutMs: 60_000,
   pollIntervalMs: 15_000,

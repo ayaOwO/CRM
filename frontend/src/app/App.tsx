@@ -15,8 +15,7 @@ import useCrmData from "../hooks/useCrmData";
 import useCrmForms from "../hooks/useCrmForms";
 import { weekStart, appointmentRange } from "../lib/calendar";
 import type { Page } from "../types";
-
-const toastDurationMs = 3500;
+import { uiConfig } from "../config";
 
 export default function App({
   username,
@@ -154,7 +153,7 @@ export default function App({
       />
       <Snackbar
         open={!!toast}
-        autoHideDuration={toastDurationMs}
+        autoHideDuration={uiConfig.toastDurationMs}
         onClose={() => setToast("")}
       >
         <Alert severity="success" onClose={() => setToast("")}>
