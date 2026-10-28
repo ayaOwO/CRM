@@ -102,10 +102,8 @@ export default function AuthView() {
           sx={{ mb: { xs: 5, md: 7 } }}
         >
           <Psychology color="primary" sx={{ fontSize: 36 }} />
-          <Box>
-            <Typography variant="h5">קליניקה</Typography>
-            <BackendStatus />
-          </Box>
+          <Typography variant="h5">קליניקה</Typography>
+          <BackendStatus />
         </Stack>
         <Box sx={{ width: "100%", maxWidth: 400, mx: "auto", my: "auto" }}>
           <Typography

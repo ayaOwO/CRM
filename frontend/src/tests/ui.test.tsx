@@ -53,6 +53,14 @@ describe("MUI interface", () => {
     expect(html).toContain("טוענים נתונים");
     expect(html).toContain("פגישות השבוע");
     expect(html).toContain("מטופלים אחרונים");
+    expect(html.match(/aria-label="Server will be ready soon"/g)).toHaveLength(
+      1,
+    );
+    expect(html.indexOf('aria-label="Server will be ready soon"')).toBeLessThan(
+      html.indexOf("<main"),
+    );
+    expect(html).toContain('aria-label="Server will be ready soon"');
+    expect(html).not.toContain(">Server will be ready soon<");
   });
   it("renders today's timeline and the five newest patients by creation date", () => {
     const today = new Date();

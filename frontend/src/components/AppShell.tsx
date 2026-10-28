@@ -15,6 +15,8 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import type { Theme } from "@mui/material/styles";
 import Add from "@mui/icons-material/Add";
 import Chair from "@mui/icons-material/Chair";
 import Dashboard from "@mui/icons-material/Dashboard";
@@ -49,6 +51,7 @@ export default function AppShell({
   children: ReactNode;
 }) {
   const now = new Date();
+  const desktop = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
   const navigation = (
     <List
       component="nav"
@@ -108,6 +111,7 @@ export default function AppShell({
               ניהול קליניקה וטיפול
             </Typography>
           </Box>
+          {desktop && <BackendStatus />}
         </Stack>
         {navigation}
         <Box sx={{ mt: "auto", pt: 4 }}>
@@ -147,6 +151,7 @@ export default function AppShell({
           <Typography variant="h5" sx={{ flex: 1 }}>
             קליניקה
           </Typography>
+          {!desktop && <BackendStatus />}
           <Tooltip title="הגדרות">
             <IconButton
               aria-label="הגדרות"
@@ -208,9 +213,6 @@ export default function AppShell({
               ? "פרטי המטופלים והקשר הטיפולי, תמיד בהישג יד."
               : "תכנון השבוע וניהול הפגישות בקליניקה."}
         </Typography>
-        <Box sx={{ mb: 2 }}>
-          <BackendStatus />
-        </Box>
         {children}
       </Container>
     </Stack>
