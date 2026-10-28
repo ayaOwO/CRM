@@ -20,7 +20,7 @@ it("recognizes the backend and recovers after unavailable responses", async () =
     expect(await backendHealthy(signal)).toBe(false);
   }
   expect(await backendHealthy(signal)).toBe(true);
-  expect(fetch).toHaveBeenLastCalledWith("/health", {
+  expect(fetch).toHaveBeenLastCalledWith("/status", {
     signal: expect.any(AbortSignal),
     cache: "no-store",
   });

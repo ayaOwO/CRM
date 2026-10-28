@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/health",
-      "destination": "https://YOUR-BACKEND.example/health"
+      "source": "/status",
+      "destination": "https://YOUR-BACKEND.example/status"
     },
     {
       "source": "/user/:path*",

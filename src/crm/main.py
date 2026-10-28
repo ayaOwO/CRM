@@ -65,7 +65,7 @@ async def health_check():
 
 
 @app.get("/")
-@app.get("/health")
+@app.get("/status")
 async def root() -> dict[str, str]:
     return {"service": "crm"}
 

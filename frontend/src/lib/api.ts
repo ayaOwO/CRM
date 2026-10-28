@@ -10,7 +10,7 @@ export async function backendHealthy(signal: AbortSignal): Promise<boolean> {
   if (signal.aborted) abort();
   const timer = setTimeout(abort, backendHealthConfig.timeoutMs);
   try {
-    const response = await fetch(`${apiBaseUrl}/health`, {
+    const response = await fetch(`${apiBaseUrl}/status`, {
       signal: controller.signal,
       cache: "no-store",
     });
