@@ -11,6 +11,8 @@ import Box from "@mui/material/Box";
 import { defaultThemeColor } from "../../theme";
 import Typography from "@mui/material/Typography";
 
+const maxColorChannel = 255;
+
 export default function SettingsDialog({
   open,
   onClose,
@@ -63,7 +65,7 @@ export default function SettingsDialog({
                 aria-labelledby={`theme-color-${index}`}
                 value={channels[index]}
                 min={0}
-                max={255}
+                max={maxColorChannel}
                 step={1}
                 disabled={themeSaving}
                 valueLabelDisplay="auto"

@@ -6,6 +6,7 @@ import {
   meetingLocationOptions,
   meetingEnd,
   defaultMeetingStart,
+  millisecondsPerMinute,
 } from "../lib/calendar";
 import { safeLink } from "../lib/contacts";
 import type {
@@ -49,7 +50,8 @@ export default function useCrmForms({
             ...a,
             guests: [...a.guests],
             durationMinutes:
-              (+new Date(a.end_time) - +new Date(a.start_time)) / 60_000,
+              (+new Date(a.end_time) - +new Date(a.start_time)) /
+              millisecondsPerMinute,
           }
         : {
             guests: [],

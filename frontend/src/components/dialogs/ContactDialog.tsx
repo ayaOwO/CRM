@@ -9,6 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import type { ContactDraft } from "../../types";
+import { contactFieldLimits } from "../../lib/contacts";
 
 export default function ContactDialog({
   contactDraft,
@@ -47,7 +48,7 @@ export default function ContactDialog({
                     fullWidth
                     label="שם פרטי"
                     value={contactDraft.first_name}
-                    inputProps={{ maxLength: 255 }}
+                    inputProps={{ maxLength: contactFieldLimits.name }}
                     onChange={(e) =>
                       setContactDraft({
                         ...contactDraft,
@@ -60,7 +61,7 @@ export default function ContactDialog({
                     fullWidth
                     label="שם משפחה"
                     value={contactDraft.last_name}
-                    inputProps={{ maxLength: 255 }}
+                    inputProps={{ maxLength: contactFieldLimits.name }}
                     onChange={(e) =>
                       setContactDraft({
                         ...contactDraft,
@@ -73,7 +74,10 @@ export default function ContactDialog({
                   label="טלפון"
                   type="tel"
                   value={contactDraft.phone_number || ""}
-                  inputProps={{ maxLength: 50, dir: "ltr" }}
+                  inputProps={{
+                    maxLength: contactFieldLimits.phone,
+                    dir: "ltr",
+                  }}
                   onChange={(e) =>
                     setContactDraft({
                       ...contactDraft,
