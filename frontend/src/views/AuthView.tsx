@@ -14,6 +14,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { login, signup } from "../lib/auth";
 import { errorText } from "../lib/api";
 import { getSessionNotice } from "../lib/session";
+import BackendStatus from "../components/BackendStatus";
 
 export default function AuthView() {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -101,7 +102,10 @@ export default function AuthView() {
           sx={{ mb: { xs: 5, md: 7 } }}
         >
           <Psychology color="primary" sx={{ fontSize: 36 }} />
-          <Typography variant="h5">קליניקה</Typography>
+          <Box>
+            <Typography variant="h5">קליניקה</Typography>
+            <BackendStatus />
+          </Box>
         </Stack>
         <Box sx={{ width: "100%", maxWidth: 400, mx: "auto", my: "auto" }}>
           <Typography

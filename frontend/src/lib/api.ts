@@ -1,5 +1,19 @@
 import { getSession, setSession } from "./session";
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "";
+
+export async function backendHealthy(signal: AbortSignal): Promise<boolean> {
+  try {
+    const response = await fetch(`${apiBaseUrl}/health`, {
+      signal,
+      cache: "no-store",
+    });
+    return response.ok && (await response.json()).service === "crm";
+  } catch {
+    return false;
+  }
+}
+
 export async function api<T>(
   path: string,
   method = "GET",
@@ -17,21 +31,18 @@ export async function api<T>(
         : "application/json";
   let response: Response;
   try {
-    response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? ""}${path}`,
-      {
-        method,
-        headers,
-        body:
-          body === undefined
-            ? undefined
-            : body instanceof FormData
-              ? body
-              : body instanceof URLSearchParams
-                ? body.toString()
-                : JSON.stringify(body),
-      },
-    );
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      method,
+      headers,
+      body:
+        body === undefined
+          ? undefined
+          : body instanceof FormData
+            ? body
+            : body instanceof URLSearchParams
+              ? body.toString()
+              : JSON.stringify(body),
+    });
   } catch {
     throw new Error("לא ניתן להתחבר לשרת. בדקו את החיבור ונסו שוב.");
   }

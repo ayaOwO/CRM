@@ -24,6 +24,7 @@ import PsychologyIcon from "@mui/icons-material/Psychology";
 import Settings from "@mui/icons-material/Settings";
 import { dayFormat } from "../lib/calendar";
 import type { Page } from "../types";
+import BackendStatus from "./BackendStatus";
 
 const names: Record<Page, string> = {
   home: "סקירה כללית",
@@ -207,6 +208,9 @@ export default function AppShell({
               ? "פרטי המטופלים והקשר הטיפולי, תמיד בהישג יד."
               : "תכנון השבוע וניהול הפגישות בקליניקה."}
         </Typography>
+        <Box sx={{ mb: 2 }}>
+          <BackendStatus />
+        </Box>
         {children}
       </Container>
     </Stack>
