@@ -84,7 +84,11 @@ it("backs off on failure, caps retries, resets on recovery, and checks immediate
   fetch.mockResolvedValueOnce(new Response(JSON.stringify({ service: "crm" })));
   await vi.advanceTimersByTimeAsync(60_000);
   expect(onStatus).toHaveBeenLastCalledWith(true);
-  await vi.advanceTimersByTimeAsync(15_000);
+  requests = fetch.mock.calls.length;
+  await vi.advanceTimersByTimeAsync(59_999);
+  expect(fetch).toHaveBeenCalledTimes(requests);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(fetch).toHaveBeenCalledTimes(requests + 1);
   expect(onStatus).toHaveBeenLastCalledWith(false);
   requests = fetch.mock.calls.length;
   await vi.advanceTimersByTimeAsync(4_999);
