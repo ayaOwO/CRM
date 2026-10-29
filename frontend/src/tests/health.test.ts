@@ -66,7 +66,7 @@ it("cancels the in-flight request when the component unmounts", async () => {
   expect(vi.getTimerCount()).toBe(0);
 });
 
-it("backs off on failure, caps retries, resets on recovery, and checks immediately on reload", async () => {
+it("backs off on failure, caps retries, stops on recovery, and checks immediately on reload", async () => {
   vi.useFakeTimers();
   const fetch = vi.fn().mockRejectedValue(new TypeError("offline"));
   vi.stubGlobal("fetch", fetch);
@@ -85,20 +85,13 @@ it("backs off on failure, caps retries, resets on recovery, and checks immediate
   await vi.advanceTimersByTimeAsync(60_000);
   expect(onStatus).toHaveBeenLastCalledWith(true);
   requests = fetch.mock.calls.length;
-  await vi.advanceTimersByTimeAsync(59_999);
+  expect(vi.getTimerCount()).toBe(0);
+  await vi.advanceTimersByTimeAsync(300_000);
   expect(fetch).toHaveBeenCalledTimes(requests);
-  await vi.advanceTimersByTimeAsync(1);
-  expect(fetch).toHaveBeenCalledTimes(requests + 1);
-  expect(onStatus).toHaveBeenLastCalledWith(false);
-  requests = fetch.mock.calls.length;
-  await vi.advanceTimersByTimeAsync(4_999);
-  expect(fetch).toHaveBeenCalledTimes(requests);
-  await vi.advanceTimersByTimeAsync(1);
-  expect(fetch).toHaveBeenCalledTimes(requests + 1);
   stop();
   expect(vi.getTimerCount()).toBe(0);
   const stopReloaded = watchBackendHealth(onStatus);
-  expect(fetch).toHaveBeenCalledTimes(requests + 2);
+  expect(fetch).toHaveBeenCalledTimes(requests + 1);
   stopReloaded();
   await vi.advanceTimersByTimeAsync(0);
   expect(vi.getTimerCount()).toBe(0);
