@@ -2,11 +2,14 @@ import logging
 from typing import Any
 
 from argon2 import PasswordHasher
+from psycopg.errors import UniqueViolation
 from sqlalchemy import Select, insert, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from crm.data.abstract_user_store import AbstractUserStore
 from crm.models import User, UserCreate, UsersTable
+from crm.models.errors import UserAlreadyExistsError
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +21,16 @@ class SqlUserStore(AbstractUserStore):
     async def create_user(self, user: UserCreate) -> User:
         values = user.model_dump()
         values["password"] = PasswordHasher().hash(user.password)
-        async with self.session_maker() as session:
-            query = insert(UsersTable).values(**values).returning(UsersTable)
-            saved = User.model_validate((await session.scalars(query)).one())
-            await session.commit()
-            return saved
+        try:
+            async with self.session_maker() as session:
+                query = insert(UsersTable).values(**values).returning(UsersTable)
+                saved = User.model_validate((await session.scalars(query)).one())
+                await session.commit()
+                return saved
+        except IntegrityError as exc:
+            if isinstance(exc.orig, UniqueViolation):
+                raise UserAlreadyExistsError from exc
+            raise
 
     async def get_user(self, identifier: str | int, with_password=False) -> User | None:
         if isinstance(identifier, int):

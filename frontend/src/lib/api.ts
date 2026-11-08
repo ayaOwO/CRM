@@ -31,13 +31,12 @@ export function watchBackendHealth(onStatus: (healthy: boolean) => void) {
     const healthy = await backendHealthy(controller.signal);
     if (controller.signal.aborted) return;
     onStatus(healthy);
-    const delay = healthy ? backendHealthConfig.pollIntervalMs : retryDelay;
-    retryDelay = healthy
-      ? backendHealthConfig.initialRetryMs
-      : Math.min(
-          retryDelay * backendHealthConfig.backoffFactor,
-          backendHealthConfig.maxRetryMs,
-        );
+    if (healthy) return;
+    const delay = retryDelay;
+    retryDelay = Math.min(
+      retryDelay * backendHealthConfig.backoffFactor,
+      backendHealthConfig.maxRetryMs,
+    );
     timer = setTimeout(check, delay);
   }
   void check();
