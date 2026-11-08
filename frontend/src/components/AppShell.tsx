@@ -15,6 +15,8 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import type { Theme } from "@mui/material/styles";
 import Add from "@mui/icons-material/Add";
 import Chair from "@mui/icons-material/Chair";
 import Dashboard from "@mui/icons-material/Dashboard";
@@ -24,6 +26,7 @@ import PsychologyIcon from "@mui/icons-material/Psychology";
 import Settings from "@mui/icons-material/Settings";
 import { dayFormat } from "../lib/calendar";
 import type { Page } from "../types";
+import BackendStatus from "./BackendStatus";
 
 const names: Record<Page, string> = {
   home: "סקירה כללית",
@@ -48,6 +51,7 @@ export default function AppShell({
   children: ReactNode;
 }) {
   const now = new Date();
+  const desktop = useMediaQuery((theme: Theme) => theme.breakpoints.up("md"));
   const navigation = (
     <List
       component="nav"
@@ -107,6 +111,7 @@ export default function AppShell({
               ניהול קליניקה וטיפול
             </Typography>
           </Box>
+          {desktop && <BackendStatus />}
         </Stack>
         {navigation}
         <Box sx={{ mt: "auto", pt: 4 }}>
@@ -146,6 +151,7 @@ export default function AppShell({
           <Typography variant="h5" sx={{ flex: 1 }}>
             קליניקה
           </Typography>
+          {!desktop && <BackendStatus />}
           <Tooltip title="הגדרות">
             <IconButton
               aria-label="הגדרות"

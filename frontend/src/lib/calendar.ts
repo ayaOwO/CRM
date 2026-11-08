@@ -1,17 +1,21 @@
 import type { Appointment } from "../types";
 
+export const millisecondsPerMinute = 60 * 1000;
+export const daysPerWeek = 7;
+const defaultMeetingHour = 10;
+
 // Move these presets to configuration when meeting settings are added.
 export const meetingDurationPresets = [90, 15] as const;
 // Replace these choices with backend configuration when available.
 export const meetingLocationOptions = ["שיחת טלפון", "קליניקה"] as const;
 export function defaultMeetingStart(day = new Date()) {
   const start = new Date(day);
-  start.setHours(10, 0, 0, 0);
+  start.setHours(defaultMeetingHour, 0, 0, 0);
   return start;
 }
 export function meetingEnd(start: string, minutes: number) {
   if (!Number.isInteger(minutes) || minutes <= 0) return "";
-  const end = new Date(+new Date(start) + minutes * 60_000);
+  const end = new Date(+new Date(start) + minutes * millisecondsPerMinute);
   return Number.isFinite(+end) ? end.toISOString() : "";
 }
 
@@ -31,7 +35,7 @@ export function appointmentRange(
   visibleRange: [Date, Date] | null,
 ): [Date, Date] {
   const start = weekStart(anchor);
-  const end = shiftDay(start, 7);
+  const end = shiftDay(start, daysPerWeek);
   if (!visibleRange) return [start, end];
   // The dashboard needs the selected week even in the calendar's day view.
   return [

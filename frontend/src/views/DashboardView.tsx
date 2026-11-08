@@ -20,10 +20,16 @@ import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import ArrowBack from "@mui/icons-material/ArrowBack";
 import Chair from "@mui/icons-material/Chair";
-import { shiftDay, appointmentsForDay, time } from "../lib/calendar";
+import {
+  shiftDay,
+  appointmentsForDay,
+  time,
+  daysPerWeek,
+} from "../lib/calendar";
 import { fullName, initials } from "../lib/contacts";
 import type { Appointment, Contact } from "../types";
 import EmptyState from "../components/EmptyState";
+import { uiConfig } from "../config";
 
 export default function DashboardView({
   contacts,
@@ -54,7 +60,7 @@ export default function DashboardView({
       (a, b) =>
         +new Date(b.created_at) - +new Date(a.created_at) || b.id - a.id,
     )
-    .slice(0, 5);
+    .slice(0, uiConfig.recentContactLimit);
   return (
     <>
       <Stack direction="row" spacing={1.5} alignItems="baseline" sx={{ mb: 3 }}>
@@ -72,7 +78,7 @@ export default function DashboardView({
             : appointments.filter(
                 (a) =>
                   +new Date(a.start_time) >= +start &&
-                  +new Date(a.start_time) < +shiftDay(start, 7),
+                  +new Date(a.start_time) < +shiftDay(start, daysPerWeek),
               ).length}
         </Typography>
       </Stack>

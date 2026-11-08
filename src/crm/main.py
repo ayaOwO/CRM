@@ -48,12 +48,13 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 app.include_router(contacts.router, dependencies=[Depends(oauth2_scheme)])
 app.include_router(appointments.router, dependencies=[Depends(oauth2_scheme)])
 app.include_router(credentials.router)
-app.include_router(user.router)
+app.include_router(user.router, dependencies=[Depends(oauth2_scheme)])
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_allowed_origins,
     allow_methods=["*"],
+    allow_headers=["Authorization", "Content-Type"],
     allow_credentials=True,
 )
 
@@ -64,6 +65,7 @@ async def health_check():
 
 
 @app.get("/")
+@app.get("/status")
 async def root() -> dict[str, str]:
     return {"service": "crm"}
 

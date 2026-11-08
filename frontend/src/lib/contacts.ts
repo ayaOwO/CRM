@@ -1,5 +1,7 @@
 import type { Contact } from "../types";
 
+export const contactFieldLimits = { name: 255, phone: 50 } as const;
+
 export const fullName = (c: Contact) => `${c.first_name} ${c.last_name}`;
 export const matchesContactName = (c: Contact, search: string) =>
   fullName(c).toLocaleLowerCase().includes(search.trim().toLocaleLowerCase());

@@ -150,23 +150,51 @@ describe("authentication API contract", () => {
     await login("user", "password");
     expect(getSession()?.token).toBe("retry-token");
   });
-  it("rejects failed or malformed login and shows signup-specific conflicts", async () => {
+  it("handles a login 401 without fetching settings and allows retry", async () => {
     const fetch = vi
       .fn()
-      .mockResolvedValueOnce(new Response("{}", { status: 401 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify([{}, null])))
-      .mockResolvedValueOnce(new Response("{}", { status: 409 }));
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ detail: "Unauthorized" }), {
+          status: 401,
+        }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify("retry-token")))
+      .mockResolvedValueOnce(new Response("{}"));
     vi.stubGlobal("fetch", fetch);
     await expect(login("user", "wrong")).rejects.toThrow(
       "שם המשתמש או הסיסמה שגויים",
+    );
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(getSession()).toBeNull();
+    await login("user", "correct");
+    expect(getSession()?.token).toBe("retry-token");
+  });
+  it("rejects malformed login responses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify([{}, null]))),
     );
     await expect(login("user", "wrong")).rejects.toThrow(
       "תשובת התחברות לא תקינה",
     );
     expect(getSession()).toBeNull();
+  });
+  it("handles a signup 409 without creating a session and allows retry", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ detail: "Conflict" }), { status: 409 }),
+        )
+        .mockResolvedValueOnce(new Response("null", { status: 201 })),
+    );
     await expect(
       signup("user", "test@example.com", "password"),
     ).rejects.toThrow("כבר בשימוש");
+    expect(getSession()).toBeNull();
+    await signup("other", "other@example.com", "password");
+    expect(getSession()).toBeNull();
   });
   it("clears a rejected session and omits its token on subsequent requests", async () => {
     setSession({ username: "user", token: "expired", settings: {} });

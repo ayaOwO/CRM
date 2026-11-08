@@ -1,4 +1,50 @@
 import { getSession, setSession } from "./session";
+import { backendHealthConfig } from "../config";
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "";
+
+export async function backendHealthy(signal: AbortSignal): Promise<boolean> {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal.addEventListener("abort", abort, { once: true });
+  if (signal.aborted) abort();
+  const timer = setTimeout(abort, backendHealthConfig.timeoutMs);
+  try {
+    const response = await fetch(`${apiBaseUrl}/status`, {
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    return response.ok && (await response.json()).service === "crm";
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+    signal.removeEventListener("abort", abort);
+  }
+}
+
+export function watchBackendHealth(onStatus: (healthy: boolean) => void) {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  let retryDelay = backendHealthConfig.initialRetryMs;
+  async function check() {
+    const healthy = await backendHealthy(controller.signal);
+    if (controller.signal.aborted) return;
+    onStatus(healthy);
+    if (healthy) return;
+    const delay = retryDelay;
+    retryDelay = Math.min(
+      retryDelay * backendHealthConfig.backoffFactor,
+      backendHealthConfig.maxRetryMs,
+    );
+    timer = setTimeout(check, delay);
+  }
+  void check();
+  return () => {
+    controller.abort();
+    clearTimeout(timer);
+  };
+}
 
 export async function api<T>(
   path: string,
@@ -17,21 +63,18 @@ export async function api<T>(
         : "application/json";
   let response: Response;
   try {
-    response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? ""}${path}`,
-      {
-        method,
-        headers,
-        body:
-          body === undefined
-            ? undefined
-            : body instanceof FormData
-              ? body
-              : body instanceof URLSearchParams
-                ? body.toString()
-                : JSON.stringify(body),
-      },
-    );
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      method,
+      headers,
+      body:
+        body === undefined
+          ? undefined
+          : body instanceof FormData
+            ? body
+            : body instanceof URLSearchParams
+              ? body.toString()
+              : JSON.stringify(body),
+    });
   } catch {
     throw new Error("לא ניתן להתחבר לשרת. בדקו את החיבור ונסו שוב.");
   }

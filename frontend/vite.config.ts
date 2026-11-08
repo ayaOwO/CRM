@@ -12,6 +12,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      "/status": "http://127.0.0.1:8000",
       "/auth": "http://127.0.0.1:8000",
       "/user": "http://127.0.0.1:8000",
       "/contacts": "http://127.0.0.1:8000",
@@ -20,6 +21,7 @@ export default defineConfig({
   },
   preview: {
     proxy: {
+      "/status": "http://127.0.0.1:8000",
       "/auth": "http://127.0.0.1:8000",
       "/user": "http://127.0.0.1:8000",
       "/contacts": "http://127.0.0.1:8000",
