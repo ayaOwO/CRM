@@ -11,6 +11,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from crm.data import AbstractUserStore
 from crm.dependencies import get_settings, get_user_store
 from crm.models import Settings, UserCreate
+from crm.models.errors import UserAlreadyExistsError
 
 router = APIRouter(prefix="/auth")
 logger = logging.getLogger(__name__)
@@ -21,16 +22,18 @@ UserStore = Annotated[AbstractUserStore, Depends(get_user_store)]
 async def create_contact(create_request: UserCreate, store: UserStore):
     try:
         await store.create_user(create_request)
-    except Exception as e:
-        logger.error(e)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+    except UserAlreadyExistsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username or email is already in use",
+        ) from exc
 
 
 @router.post("/login", status_code=status.HTTP_200_OK)
 async def login(
-        settings: Annotated[Settings, Depends(get_settings)],
-        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-        store: UserStore,
+    settings: Annotated[Settings, Depends(get_settings)],
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    store: UserStore,
 ) -> str:
     logger.debug("Login requested")
     try:

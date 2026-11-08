@@ -1,12 +1,15 @@
 import unittest
+from unittest.mock import AsyncMock, Mock
 
 from argon2 import PasswordHasher
+from psycopg.errors import NotNullViolation, UniqueViolation
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from crm.data import SqlUserStore
 from crm.models import UserCreate
+from crm.models.errors import UserAlreadyExistsError
 
 
 class UserStoreTest(unittest.IsolatedAsyncioTestCase):
@@ -66,8 +69,30 @@ class UserStoreTest(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(
                 await store.get_user(request.username, with_password=True), saved
             )
+            with self.assertRaises(IntegrityError):
+                await store.create_user(
+                    request.model_copy(
+                        update={"username": None, "email": "new@example.com"}
+                    )
+                )
         finally:
             await engine.dispose()
+
+    async def test_postgres_duplicate_and_unexpected_failures(self):
+        request = UserCreate(username="aya", email="aya@example.com", password="test")
+        for original, expected in (
+            (UniqueViolation("duplicate"), UserAlreadyExistsError),
+            (NotNullViolation("missing value"), IntegrityError),
+        ):
+            with self.subTest(original=type(original).__name__):
+                error = IntegrityError("insert", {}, original)
+                session = AsyncMock()
+                session.scalars.side_effect = error
+                context = AsyncMock()
+                context.__aenter__.return_value = session
+                store = SqlUserStore(Mock(return_value=context))
+                with self.assertRaises(expected):
+                    await store.create_user(request)
 
 
 if __name__ == "__main__":

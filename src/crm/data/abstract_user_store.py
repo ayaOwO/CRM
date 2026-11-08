@@ -8,7 +8,7 @@ from crm.models.user import User
 class AbstractUserStore(ABC):
     @abstractmethod
     async def create_user(self, user: UserCreate) -> User:
-        pass
+        """Create a user, raising UserAlreadyExistsError for duplicate identity."""
 
     @abstractmethod
     async def get_user(self, identifier: str | int, with_password=False) -> User | None:
