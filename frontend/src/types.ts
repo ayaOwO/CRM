@@ -8,6 +8,7 @@ export interface Contact {
   created_at: string;
 }
 export interface Appointment {
+  notes?: string | null;
   id: number;
   guests: number[];
   location: string;
@@ -15,7 +16,7 @@ export interface Appointment {
   end_time: string;
 }
 
-export type Page = "home" | "clients" | "calendar";
+export type Page = "home" | "clients" | "calendar" | "scheduler";
 export type ContactDraft = Omit<Contact, "id" | "created_at"> & { id?: number };
 export type AppointmentDraft = Omit<Appointment, "id"> & {
   id?: number;

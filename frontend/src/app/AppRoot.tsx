@@ -7,6 +7,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { heIL } from "@mui/x-date-pickers/locales";
 import "dayjs/locale/he";
 import { createAppTheme, readThemeColor, rtlCache } from "../theme";
+import BookingView from "../views/BookingView";
 import App from "./App";
 import AuthView from "../views/AuthView";
 import { getSession, subscribeSession, setSession } from "../lib/session";
@@ -57,7 +58,16 @@ export default function AppRoot() {
             heIL.components.MuiLocalizationProvider.defaultProps.localeText
           }
         >
-          {session ? (
+          {location.pathname.startsWith("/book/") ||
+          location.pathname === "/manage" ? (
+            <BookingView
+              code={
+                location.pathname.startsWith("/book/")
+                  ? location.pathname.split("/")[2]
+                  : undefined
+              }
+            />
+          ) : session ? (
             <App
               key={session.token}
               username={session.username}

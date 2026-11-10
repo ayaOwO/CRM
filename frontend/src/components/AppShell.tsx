@@ -18,6 +18,7 @@ import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type { Theme } from "@mui/material/styles";
 import Add from "@mui/icons-material/Add";
+import EventAvailable from "@mui/icons-material/EventAvailable";
 import Chair from "@mui/icons-material/Chair";
 import Dashboard from "@mui/icons-material/Dashboard";
 import Logout from "@mui/icons-material/Logout";
@@ -32,6 +33,7 @@ const names: Record<Page, string> = {
   home: "סקירה כללית",
   clients: "מטופלים",
   calendar: "יומן פגישות",
+  scheduler: "תיאום פגישות",
 };
 export default function AppShell({
   username,
@@ -63,6 +65,7 @@ export default function AppShell({
           ["home", Dashboard],
           ["clients", Group],
           ["calendar", Chair],
+          ["scheduler", EventAvailable],
         ] as const
       ).map(([key, Icon]) => (
         <ListItemButton
@@ -198,20 +201,24 @@ export default function AppShell({
               {dayFormat.format(now)}
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => onCreate()}
-          >
-            {page === "clients" ? "מטופל חדש" : "פגישה חדשה"}
-          </Button>
+          {page !== "scheduler" && (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => onCreate()}
+            >
+              {page === "clients" ? "מטופל חדש" : "פגישה חדשה"}
+            </Button>
+          )}
         </Stack>
         <Typography color="text.secondary" sx={{ mb: 3 }}>
           {page === "home"
             ? "מקום אחד למטופלים, לפגישות וליום העבודה שלך."
             : page === "clients"
               ? "פרטי המטופלים והקשר הטיפולי, תמיד בהישג יד."
-              : "תכנון השבוע וניהול הפגישות בקליניקה."}
+              : page === "scheduler"
+                ? "סוגי פגישות, זמינות וקישורים לשיתוף."
+                : "תכנון השבוע וניהול הפגישות בקליניקה."}
         </Typography>
         {children}
       </Container>

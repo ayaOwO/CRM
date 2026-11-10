@@ -15,6 +15,7 @@ class AppointmentsTable(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     location: Mapped[str] = mapped_column(Text)
     start_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), index=True)
     end_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))

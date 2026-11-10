@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from crm.data.abstract_appointment_store import AbstractAppointmentStore
+from crm.data.booking_lock import lock_calendar, validate_guest_conflicts
 from crm.models.appointments import Appointment
 from crm.models.orm.appointment_guests_table import AppointmentGuestsTable
 from crm.models.orm.appointments_table import AppointmentsTable
@@ -21,6 +22,7 @@ class SqlAppointmentStore(AbstractAppointmentStore):
     def _response(row: AppointmentsTable) -> Appointment:
         return Appointment(
             id=row.id,
+            notes=row.notes,
             location=row.location,
             start_time=row.start_time,
             end_time=row.end_time,
@@ -48,6 +50,10 @@ class SqlAppointmentStore(AbstractAppointmentStore):
         self, appointment: AppointmentCreate, *, user_id: int
     ) -> Appointment:
         async with self.session_maker() as session, session.begin():
+            await lock_calendar(session, user_id)
+            await validate_guest_conflicts(
+                session, user_id, appointment.start_time, appointment.end_time
+            )
             await self._validate_guests(session, appointment.guests, user_id)
             row = AppointmentsTable(
                 user_id=user_id,
@@ -97,6 +103,7 @@ class SqlAppointmentStore(AbstractAppointmentStore):
         self, appointment_id: int, update: AppointmentUpdate, *, user_id: int
     ) -> Appointment | None:
         async with self.session_maker() as session, session.begin():
+            await lock_calendar(session, user_id)
             row: AppointmentsTable | None = (
                 await session.scalars(
                     select(AppointmentsTable)
@@ -113,6 +120,9 @@ class SqlAppointmentStore(AbstractAppointmentStore):
             merged = AppointmentCreate.model_validate(
                 self._response(row).model_dump(exclude={"id"}) | changes
             )
+            await validate_guest_conflicts(
+                session, user_id, merged.start_time, merged.end_time, appointment_id
+            )
             if "guests" in changes:
                 await self._validate_guests(session, merged.guests, user_id)
                 existing = {link.contact_id: link for link in row.guest_links}
@@ -123,6 +133,7 @@ class SqlAppointmentStore(AbstractAppointmentStore):
                     else:
                         guest = AppointmentGuestsTable(contact_id=contact_id)
                     row.guest_links.append(guest)
+            row.notes = merged.notes
             row.location = merged.location
             row.start_time = merged.start_time
             row.end_time = merged.end_time
@@ -131,6 +142,7 @@ class SqlAppointmentStore(AbstractAppointmentStore):
 
     async def delete_appointment(self, appointment_id: int, *, user_id: int) -> bool:
         async with self.session_maker() as session, session.begin():
+            await lock_calendar(session, user_id)
             row = (
                 await session.scalars(
                     select(AppointmentsTable)
