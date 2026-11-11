@@ -5,6 +5,8 @@ import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -391,21 +393,70 @@ export default function SchedulerView() {
             <Divider />
             <Typography variant="h6">זמינות שבועית</Typography>
             <Typography color="text.secondary">
-              השעות לפי אזור הזמן של סוג הפגישה. יום ללא טווח שעות סגור להזמנות.
+              בחרו ימים; לכל יום יתווסף טווח 09:00–17:00 שאפשר לערוך. השעות לפי
+              אזור הזמן של סוג הפגישה.
             </Typography>
-            {days.map((name, day) => (
-              <Box key={day}>
-                <Typography sx={{ mb: 1 }}>{name}</Typography>
-                {intervals(
-                  draft.repeat.filter((r) => r.day === day),
-                  (value) =>
-                    field("repeat", [
-                      ...draft.repeat.filter((r) => r.day !== day),
-                      ...value.map((v) => ({ ...v, day })),
-                    ]),
-                )}
-              </Box>
-            ))}
+            <ToggleButtonGroup
+              value={[...new Set(draft.repeat.map((range) => range.day))]}
+              onChange={(_, selectedDays: number[]) => {
+                const currentDays = new Set(
+                  draft.repeat.map((range) => range.day),
+                );
+                field("repeat", [
+                  ...draft.repeat.filter((range) =>
+                    selectedDays.includes(range.day),
+                  ),
+                  ...selectedDays
+                    .filter((day) => !currentDays.has(day))
+                    .map((day) => ({
+                      day,
+                      start: "09:00",
+                      end: "17:00",
+                    })),
+                ]);
+              }}
+              aria-label="בחירת ימי זמינות שבועית"
+              sx={{
+                flexWrap: "wrap",
+                gap: 0.75,
+                "& .MuiToggleButtonGroup-grouped": {
+                  border: 1,
+                  borderColor: "divider",
+                  borderRadius: 1,
+                },
+              }}
+            >
+              {days.map((name, day) => (
+                <ToggleButton key={day} value={day} aria-label={name}>
+                  {name}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            {[...new Set(draft.repeat.map((range) => range.day))]
+              .sort((a, b) => a - b)
+              .map((day) => (
+                <Box
+                  key={day}
+                  sx={{ borderBottom: 1, borderColor: "divider", pb: 2 }}
+                >
+                  <Typography sx={{ mb: 1, fontWeight: 600 }}>
+                    {days[day]}
+                  </Typography>
+                  {intervals(
+                    draft.repeat.filter((r) => r.day === day),
+                    (value) =>
+                      field("repeat", [
+                        ...draft.repeat.filter((r) => r.day !== day),
+                        ...value.map((v) => ({ ...v, day })),
+                      ]),
+                  )}
+                </Box>
+              ))}
+            {draft.repeat.length === 0 && (
+              <Typography variant="body2" color="text.secondary">
+                בחרו יום כדי להוסיף שעות זמינות.
+              </Typography>
+            )}
             <Divider />
             <Typography variant="h6">חריגות לפי תאריך</Typography>
             <Typography color="text.secondary">
