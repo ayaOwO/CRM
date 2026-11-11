@@ -66,7 +66,9 @@ class SchedulerData(BaseModel):
     @field_validator("window_start", "window_end")
     @classmethod
     def utc(cls, value):
-        return value.astimezone(UTC) if value else None
+        if value:
+            return value.astimezone(UTC)
+        return None
 
     @model_validator(mode="after")
     def valid(self):

@@ -123,11 +123,10 @@ class SqlSchedulerStore:
 
     async def guest_session(self, token: str | None) -> tuple[str, bool]:
         async with self.sessions() as session, session.begin():
-            row = (
-                await session.get(GuestSessionsTable, token_hash(token))
-                if token
-                else None
-            )
+            if token:
+                row = await session.get(GuestSessionsTable, token_hash(token))
+            else:
+                row = None
             if row and row.expires_at > now_utc():
                 return token, False
             token = secrets.token_urlsafe(32)
@@ -150,11 +149,10 @@ class SqlSchedulerStore:
                     BookingRateLimitsTable.window < window - 24
                 )
             )
-            insert = (
-                pg_insert
-                if session.bind.dialect.name == "postgresql"
-                else sqlite_insert
-            )
+            if session.bind.dialect.name == "postgresql":
+                insert = pg_insert
+            else:
+                insert = sqlite_insert
             for key in sorted(keys):
                 stmt = (
                     insert(BookingRateLimitsTable)
@@ -204,16 +202,18 @@ class SqlSchedulerStore:
         end = datetime.combine(
             last + timedelta(days=1), datetime.min.time(), zone
         ).astimezone(UTC)
-        busy = await session.execute(
+        query = (
             select(AppointmentsTable, GuestBookingsTable.policy)
             .outerjoin(GuestBookingsTable)
             .where(
                 AppointmentsTable.user_id == row.user_id,
                 AppointmentsTable.start_time < end + duration + timedelta(days=1),
                 AppointmentsTable.end_time > start - timedelta(days=1),
-                AppointmentsTable.id != exclude if exclude is not None else True,
             )
         )
+        if exclude is not None:
+            query = query.where(AppointmentsTable.id != exclude)
+        busy = await session.execute(query)
         blocks = [
             (
                 a.start_time,
@@ -360,17 +360,19 @@ class SqlSchedulerStore:
         self, guest_token: str, code: str | None = None
     ) -> list[GuestBooking]:
         async with self.sessions() as session:
-            owner = (await self.public(session, code)).user_id if code else None
-            rows = await session.execute(
+            query = (
                 select(GuestBookingsTable, AppointmentsTable)
                 .join(AppointmentsTable)
                 .where(
                     GuestBookingsTable.session_hash == token_hash(guest_token),
-                    GuestBookingsTable.user_id == owner if owner is not None else True,
                     AppointmentsTable.end_time > now_utc(),
                 )
                 .order_by(AppointmentsTable.start_time)
             )
+            if code:
+                owner = (await self.public(session, code)).user_id
+                query = query.where(GuestBookingsTable.user_id == owner)
+            rows = await session.execute(query)
             return [self.booking(b, a) for b, a in rows]
 
     async def authorized(
@@ -417,11 +419,10 @@ class SqlSchedulerStore:
                 session, booking_id, guest, management
             )
             self.check_policy(booking, appointment, False)
-            row = (
-                await session.get(SchedulersTable, booking.scheduler_id)
-                if booking.scheduler_id
-                else None
-            )
+            if booking.scheduler_id:
+                row = await session.get(SchedulersTable, booking.scheduler_id)
+            else:
+                row = None
             if row is None:
                 raise HTTPException(
                     409, "Scheduling link was removed; contact the organizer"
@@ -433,7 +434,11 @@ class SqlSchedulerStore:
         booking: GuestBookingsTable, appointment: AppointmentsTable, cancel: bool
     ):
         data = SchedulerData.model_validate(booking.policy)
-        if not (data.allow_cancel if cancel else data.allow_reschedule):
+        if cancel:
+            allowed = data.allow_cancel
+        else:
+            allowed = data.allow_reschedule
+        if not allowed:
             raise HTTPException(409, "This action is disabled; contact the organizer")
         if appointment.start_time <= now_utc() + timedelta(
             hours=data.cancel_notice_hours
@@ -461,11 +466,10 @@ class SqlSchedulerStore:
             if start is None:
                 await session.delete(appointment)
                 return None
-            row = (
-                await session.get(SchedulersTable, booking.scheduler_id)
-                if booking.scheduler_id
-                else None
-            )
+            if booking.scheduler_id:
+                row = await session.get(SchedulersTable, booking.scheduler_id)
+            else:
+                row = None
             if row is None:
                 raise HTTPException(
                     409, "Scheduling link was removed; contact the organizer"

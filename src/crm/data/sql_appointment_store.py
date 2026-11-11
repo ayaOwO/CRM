@@ -77,7 +77,9 @@ class SqlAppointmentStore(AbstractAppointmentStore):
                     AppointmentsTable.user_id == user_id,
                 )
             )
-            return self._response(row) if row is not None else None
+            if row is None:
+                return None
+            return self._response(row)
 
     async def list_appointments(
         self,

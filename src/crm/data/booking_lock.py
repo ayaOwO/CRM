@@ -19,14 +19,16 @@ async def validate_guest_conflicts(
     session: AsyncSession, user_id: int, start, end, exclude: int | None = None
 ) -> None:
     """Manual writes may overlap each other, but must honor guest bookings."""
-    rows = await session.execute(
+    query = (
         select(AppointmentsTable, GuestBookingsTable)
         .join(GuestBookingsTable)
         .where(
             AppointmentsTable.user_id == user_id,
-            AppointmentsTable.id != exclude if exclude is not None else True,
         )
     )
+    if exclude is not None:
+        query = query.where(AppointmentsTable.id != exclude)
+    rows = await session.execute(query)
     for appointment, booking in rows:
         buffer = timedelta(minutes=booking.policy.get("buffer_minutes", 0))
         if (

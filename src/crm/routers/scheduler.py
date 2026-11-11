@@ -68,7 +68,10 @@ async def throttle(
 ):
     # Do not trust arbitrary X-Forwarded-For headers. Configure trusted proxy IPs
     # at the ASGI server; request.client then contains the verified peer address.
-    ip = request.client.host if request.client else "unknown"
+    if request.client:
+        ip = request.client.host
+    else:
+        ip = "unknown"
     secret = settings.secret_key.encode()
     keys = [
         hmac.new(secret, v.encode(), hashlib.sha256).hexdigest()

@@ -47,7 +47,10 @@ class SqlContactStore(AbstractContactStore):
         )
         async with self.session_maker() as session:
             row = (await session.scalars(replace_query)).one_or_none()
-            saved = Contact.model_validate(row) if row is not None else None
+            if row is not None:
+                saved = Contact.model_validate(row)
+            else:
+                saved = None
             await session.commit()
             return saved
 
@@ -65,7 +68,10 @@ class SqlContactStore(AbstractContactStore):
         )
         async with self.session_maker() as session:
             row = (await session.scalars(update_query)).one_or_none()
-            saved = Contact.model_validate(row) if row is not None else None
+            if row is not None:
+                saved = Contact.model_validate(row)
+            else:
+                saved = None
             await session.commit()
             return saved
 
@@ -81,7 +87,9 @@ class SqlContactStore(AbstractContactStore):
                     ContactsTable.id == contact_id, ContactsTable.user_id == user_id
                 )
             )
-        return Contact.model_validate(contact) if contact is not None else None
+        if contact is None:
+            return None
+        return Contact.model_validate(contact)
 
     async def search_contacts(
         self,
@@ -91,18 +99,22 @@ class SqlContactStore(AbstractContactStore):
         *,
         user_id: int,
     ) -> list[Contact]:
-        search_query = select(ContactsTable).where(
-            ContactsTable.user_id == user_id,
-            ContactsTable.first_name == first_name.strip()
-            if first_name and first_name.strip()
-            else True,
-            ContactsTable.last_name == last_name.strip()
-            if last_name and last_name.strip()
-            else True,
-            ContactsTable.notes.contains(notes.strip(), autoescape=True)
-            if notes and notes.strip()
-            else True,
-        )
+        search_query = select(ContactsTable).where(ContactsTable.user_id == user_id)
+
+        if first_name and first_name.strip():
+            search_query = search_query.where(
+                ContactsTable.first_name == first_name.strip()
+            )
+
+        if last_name and last_name.strip():
+            search_query = search_query.where(
+                ContactsTable.last_name == last_name.strip()
+            )
+
+        if notes and notes.strip():
+            search_query = search_query.where(
+                ContactsTable.notes.contains(notes.strip(), autoescape=True)
+            )
 
         async with self.session_maker() as session:
             res = await session.execute(search_query.order_by(ContactsTable.id))
