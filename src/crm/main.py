@@ -10,8 +10,8 @@ from scalar_fastapi import add_scalar_reference
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from crm.bl import AppointmentService
 from crm.data import SqlContactStore, SqlUserStore
-from crm.data.sql_appointment_store import SqlAppointmentStore
 from crm.data.sql_scheduler_store import SqlSchedulerStore
 from crm.dependencies import get_settings
 from crm.routers import appointments, contacts, credentials, scheduler, user
@@ -19,15 +19,20 @@ from crm.routers import appointments, contacts, credentials, scheduler, user
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    url = make_url(get_settings().database_url)
+    settings = get_settings()
+    url = make_url(settings.database_url)
     engine = create_async_engine(url)
     try:
         session_factory = async_sessionmaker(engine, expire_on_commit=False)
         app.state.session_factory = session_factory
         app.state.contact_store = SqlContactStore(session_factory)
-        app.state.appointment_store = SqlAppointmentStore(session_factory)
+        app.state.appointment_service = AppointmentService(session_factory)
         app.state.user_store = SqlUserStore(session_factory)
-        app.state.scheduler_store = SqlSchedulerStore(session_factory)
+        app.state.scheduler_store = SqlSchedulerStore(
+            session_factory,
+            link_settings=settings.scheduler_link,
+            link_secret=settings.secret_key,
+        )
         yield
     finally:
         await engine.dispose()

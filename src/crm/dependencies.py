@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from functools import lru_cache
 from typing import Annotated
 
@@ -5,8 +6,10 @@ import jwt
 from fastapi import HTTPException, Request
 from fastapi.params import Depends
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from crm.data import AbstractAppointmentStore, AbstractContactStore, AbstractUserStore
+from crm.bl import AppointmentService
+from crm.data import AbstractContactStore, AbstractUserStore
 from crm.models.settings import Settings
 from crm.models.user import User
 
@@ -48,5 +51,10 @@ async def get_contact_store(request: Request) -> AbstractContactStore:
     return request.app.state.contact_store
 
 
-async def get_appointment_store(request: Request) -> AbstractAppointmentStore:
-    return request.app.state.appointment_store
+async def get_appointment_service(request: Request) -> AppointmentService:
+    return request.app.state.appointment_service
+
+
+async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
+    async with request.app.state.session_factory() as session:
+        yield session

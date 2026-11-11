@@ -13,7 +13,7 @@ class SchedulersTable(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
-    code_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    code_hash: Mapped[str | None] = mapped_column(String(64), unique=True)
     data: Mapped[dict[str, Any]] = mapped_column(JSON)
 
 

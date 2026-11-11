@@ -12,11 +12,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from user_scope_support import create_schema
 
+from crm.bl import AppointmentService
 from crm.data.sql_appointment_store import SqlAppointmentStore
 from crm.dependencies import get_current_user, get_settings
 from crm.models.orm.appointment_guests_table import AppointmentGuestsTable
 from crm.models.orm.appointments_table import AppointmentsTable
 from crm.models.orm.contacts_table import ContactsTable
+from crm.models.requests.appointment_create import AppointmentCreate
+from crm.models.scheduler_link_settings import SchedulerLinkSettings
 from crm.models.user import User
 from crm.routers.appointments import router
 
@@ -53,7 +56,8 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
             self.guests = [contact.id for contact in contacts]
         app = FastAPI()
         self.app = app
-        app.state.appointment_store = SqlAppointmentStore(self.sessions)
+        app.state.session_factory = self.sessions
+        app.state.appointment_service = AppointmentService(self.sessions)
         app.include_router(router)
         app.dependency_overrides[get_current_user] = lambda: User(
             id=1, username="owner", email="owner@example.com"
@@ -70,6 +74,79 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
             "start_time": "2026-10-11T12:00:00+03:00",
             "end_time": "2026-10-11T13:00:00+03:00",
         }
+
+    async def test_request_session_is_shared_and_closed(self):
+        sessions = []
+
+        def session_factory():
+            session = self.sessions()
+            session.close = AsyncMock(wraps=session.close)
+            sessions.append(session)
+            return session
+
+        self.app.state.session_factory = session_factory
+        store = self.app.state.appointment_service.store
+        with (
+            patch.object(store, "lock_calendar", wraps=store.lock_calendar) as lock,
+            patch.object(
+                store, "get_guest_bookings", wraps=store.get_guest_bookings
+            ) as bookings,
+            patch.object(
+                store, "get_contact_ids", wraps=store.get_contact_ids
+            ) as contacts,
+            patch.object(
+                store, "add_appointment", wraps=store.add_appointment
+            ) as insert,
+        ):
+            response = await self.client.post("/appointments", json=self.payload)
+            self.assertEqual(response.status_code, 201, response.text)
+            self.assertEqual(len(sessions), 1)
+            for operation in (lock, bookings, contacts, insert):
+                operation.assert_awaited_once()
+                self.assertIs(operation.await_args.kwargs["session"], sessions[0])
+        sessions[0].close.assert_awaited_once()
+        self.assertFalse(sessions[0].in_transaction())
+
+        response = await self.client.post(
+            "/appointments", json=self.payload | {"guests": [999999]}
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(len(sessions), 2)
+        self.assertIsNot(sessions[0], sessions[1])
+        sessions[1].close.assert_awaited_once()
+        self.assertFalse(sessions[1].in_transaction())
+
+    async def test_store_session_factory_and_shared_transaction(self):
+        store = SqlAppointmentStore(self.sessions)
+        appointment = AppointmentCreate.model_validate(self.payload)
+        saved = await store.add_appointment(appointment, user_id=1)
+        self.assertEqual(await store.get_appointment(saved.id, user_id=1), saved)
+        self.assertEqual(
+            await store.list_appointments(
+                appointment.start_time, appointment.end_time, user_id=1
+            ),
+            [saved],
+        )
+        replacement = appointment.model_copy(update={"location": "Home"})
+        updated = await store.update_appointment(saved.id, replacement, user_id=1)
+        self.assertEqual(updated.location, "Home")
+        self.assertEqual(await store.get_appointment(saved.id, user_id=1), updated)
+
+        with self.assertRaisesRegex(RuntimeError, "Roll back"):
+            async with self.sessions() as session, session.begin():
+                await store.lock_calendar(1, session=session)
+                await store.update_appointment(
+                    saved.id, appointment, user_id=1, session=session
+                )
+                await store.delete_appointment(saved.id, user_id=1, session=session)
+                self.assertTrue(session.in_transaction())
+                self.assertIsNone(
+                    await store.get_appointment(saved.id, user_id=1, session=session)
+                )
+                raise RuntimeError("Roll back")
+        self.assertEqual(await store.get_appointment(saved.id, user_id=1), updated)
+        self.assertTrue(await store.delete_appointment(saved.id, user_id=1))
+        self.assertIsNone(await store.get_appointment(saved.id, user_id=1))
 
     async def test_authenticated_user_id(self):
         self.app.dependency_overrides.pop(get_current_user)
@@ -148,7 +225,11 @@ class AppointmentsTest(unittest.IsolatedAsyncioTestCase):
             id=1, username="owner", email="owner@example.com"
         )
         self.addCleanup(app.dependency_overrides.pop, get_current_user)
-        settings = SimpleNamespace(database_url=self.engine.url)
+        settings = SimpleNamespace(
+            database_url=self.engine.url,
+            scheduler_link=SchedulerLinkSettings(_env_file=None),
+            secret_key="test-secret",
+        )
         with (
             patch("crm.main.get_settings", return_value=settings),
             patch("crm.main.create_async_engine", return_value=self.engine),

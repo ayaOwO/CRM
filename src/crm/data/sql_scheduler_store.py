@@ -1,4 +1,6 @@
+import base64
 import hashlib
+import hmac
 import secrets
 from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -7,6 +9,7 @@ from fastapi import HTTPException
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from crm.data.booking_lock import lock_calendar
@@ -27,6 +30,7 @@ from crm.models.scheduler import (
     SchedulerCreated,
     SchedulerData,
 )
+from crm.models.scheduler_link_settings import SchedulerLinkSettings
 
 
 def token_hash(token: str) -> str:
@@ -38,8 +42,58 @@ def now_utc() -> datetime:
 
 
 class SqlSchedulerStore:
-    def __init__(self, sessions: async_sessionmaker[AsyncSession]):
+    def __init__(
+        self,
+        sessions: async_sessionmaker[AsyncSession],
+        *,
+        link_settings: SchedulerLinkSettings,
+        link_secret: str,
+    ):
         self.sessions = sessions
+        self.link_settings = link_settings
+        self.link_secret = link_secret.encode()
+
+    def _gen_booking_code(self, source: str) -> str:
+        digest = hmac.digest(
+            self.link_secret, source.encode(), self.link_settings.hash_name
+        )
+        return (
+            base64.urlsafe_b64encode(digest)
+            .decode()
+            .rstrip("=")[: self.link_settings.length]
+        )
+
+    async def _set_booking_code(
+        self, session: AsyncSession, row: SchedulersTable
+    ) -> str:
+        source = f"{row.user_id}:{row.id}"
+        previous_hash = row.code_hash
+        if previous_hash is not None:
+            source += f":{previous_hash}"
+        for attempt in range(10):
+            if attempt:
+                candidate = f"{source}:{attempt}"
+            else:
+                candidate = source
+            code = self._gen_booking_code(candidate)
+            code_hash = token_hash(code)
+            if code_hash == previous_hash:
+                continue
+            try:
+                async with session.begin_nested():
+                    row.code_hash = code_hash
+                    await session.flush()
+                return code
+            except IntegrityError:
+                collision = await session.scalar(
+                    select(SchedulersTable.id).where(
+                        SchedulersTable.code_hash == code_hash
+                    )
+                )
+                if collision is None:
+                    raise
+                await session.refresh(row)
+        raise HTTPException(503, "Could not allocate a unique booking link; try again")
 
     @staticmethod
     def scheduler(row: SchedulersTable) -> Scheduler:
@@ -55,15 +109,14 @@ class SqlSchedulerStore:
             return [self.scheduler(row) for row in rows]
 
     async def create(self, data: SchedulerData, user_id: int) -> SchedulerCreated:
-        code = secrets.token_urlsafe(32)
         async with self.sessions() as session, session.begin():
             row = SchedulersTable(
                 user_id=user_id,
-                code_hash=token_hash(code),
                 data=data.model_dump(mode="json"),
             )
             session.add(row)
             await session.flush()
+            code = await self._set_booking_code(session, row)
             return SchedulerCreated(
                 **self.scheduler(row).model_dump(), booking_path=f"/book/{code}"
             )
@@ -100,8 +153,7 @@ class SqlSchedulerStore:
             await lock_calendar(session, user_id)
             row = await self.owned(session, scheduler_id, user_id)
             if rotate:
-                code = secrets.token_urlsafe(32)
-                row.code_hash = token_hash(code)
+                code = await self._set_booking_code(session, row)
                 return f"/book/{code}"
             # Keep appointments and their policy snapshot after deleting a scheduler.
             await session.delete(row)

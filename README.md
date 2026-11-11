@@ -60,6 +60,14 @@ times use their first occurrence. The appointment must fit entirely in the windo
 
 Creation returns a reusable `/book/<code>` link. Save it when shown: only the hash
 is stored. **יצירת קישור חדש** rotates the code and invalidates the previous link.
+New codes are derived from the user and scheduler IDs using HMAC and `SECRET_KEY`.
+`SchedulerLinkSettings` groups the hash algorithm and code length:
+`SCHEDULER_LINK_HASH_NAME` defaults to `sha256` (also supports `sha384` and `sha512`),
+and `SCHEDULER_LINK_LENGTH` defaults to `6` (range `6`–`43`).
+The unique database constraint rejects collisions, which retry with a deterministic
+counter. Settings edits preserve the link; changing the hash, length or secret affects
+only newly created or explicitly replaced links. Short public booking codes are
+easier to guess; private management tokens remain long and random.
 Deleting a meeting type disables new bookings and rescheduling, while preserving
 existing appointments and their original cancellation policy.
 

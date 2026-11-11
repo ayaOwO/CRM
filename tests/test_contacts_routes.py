@@ -225,31 +225,36 @@ class ContactRoutesTest(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_linked_client_deletion_conflict(self):
-        contact = (
-            await self.client.post(
-                "/contacts", json={"first_name": "Test", "last_name": "Client"}
+        async with app.state.session_factory() as session:
+            contact = (
+                await self.client.post(
+                    "/contacts", json={"first_name": "Test", "last_name": "Client"}
+                )
+            ).json()
+            appointment = await app.state.appointment_service.add_appointment(
+                AppointmentCreate.model_validate(
+                    {
+                        "guests": [contact["id"]],
+                        "location": "Office",
+                        "start_time": "2026-10-11T09:00:00Z",
+                        "end_time": "2026-10-11T10:00:00Z",
+                    }
+                ),
+                user_id=1,
+                session=session,
             )
-        ).json()
-        appointment = await app.state.appointment_store.add_appointment(
-            AppointmentCreate.model_validate(
-                {
-                    "guests": [contact["id"]],
-                    "location": "Office",
-                    "start_time": "2026-10-11T09:00:00Z",
-                    "end_time": "2026-10-11T10:00:00Z",
-                }
-            ),
-            user_id=1,
-        )
-        response = await self.client.delete(f"/contacts/{contact['id']}")
-        self.assertEqual(response.status_code, 409)
-        self.assertEqual(
-            (await self.client.get(f"/contacts/{contact['id']}")).status_code, 200
-        )
-        await app.state.appointment_store.delete_appointment(appointment.id, user_id=1)
-        self.assertEqual(
-            (await self.client.delete(f"/contacts/{contact['id']}")).status_code, 204
-        )
+            response = await self.client.delete(f"/contacts/{contact['id']}")
+            self.assertEqual(response.status_code, 409)
+            self.assertEqual(
+                (await self.client.get(f"/contacts/{contact['id']}")).status_code, 200
+            )
+            await app.state.appointment_service.delete_appointment(
+                appointment.id, user_id=1, session=session
+            )
+            self.assertEqual(
+                (await self.client.delete(f"/contacts/{contact['id']}")).status_code,
+                204,
+            )
 
     async def test_engine_configuration_and_shutdown(self):
         settings = Settings(

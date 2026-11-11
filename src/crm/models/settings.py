@@ -3,8 +3,11 @@ from datetime import timedelta
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from crm.models.scheduler_link_settings import SchedulerLinkSettings
+
 
 class Settings(BaseSettings):
+    scheduler_link: SchedulerLinkSettings = Field(default_factory=SchedulerLinkSettings)
     guest_cookie_secure: bool = True
     booking_captcha_site_key: str = ""
     booking_captcha_secret: str = ""

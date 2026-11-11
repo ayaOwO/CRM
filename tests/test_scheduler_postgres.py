@@ -13,6 +13,7 @@ from user_scope_support import create_schema
 from crm.data.sql_scheduler_store import SqlSchedulerStore
 from crm.models.orm.users_table import UsersTable
 from crm.models.scheduler import BookingCreate, SchedulerData
+from crm.models.scheduler_link_settings import SchedulerLinkSettings
 
 
 @unittest.skipUnless(
@@ -27,7 +28,11 @@ class SchedulerConcurrencyTest(unittest.IsolatedAsyncioTestCase):
         async with engine.begin() as connection:
             await create_schema(connection)
         sessions = async_sessionmaker(engine, expire_on_commit=False)
-        store = SqlSchedulerStore(sessions)
+        store = SqlSchedulerStore(
+            sessions,
+            link_settings=SchedulerLinkSettings(_env_file=None),
+            link_secret="test-secret",
+        )
         async with sessions() as session, session.begin():
             name = "concurrency-" + uuid4().hex[:16]
             owner = UsersTable(

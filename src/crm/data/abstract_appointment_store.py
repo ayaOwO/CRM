@@ -4,7 +4,6 @@ from pydantic import AwareDatetime
 
 from crm.models.appointments import Appointment
 from crm.models.requests.appointment_create import AppointmentCreate
-from crm.models.requests.appointment_update import AppointmentUpdate
 
 
 class AbstractAppointmentStore(ABC):
@@ -32,7 +31,7 @@ class AbstractAppointmentStore(ABC):
 
     @abstractmethod
     async def update_appointment(
-        self, appointment_id: int, update: AppointmentUpdate, *, user_id: int
+        self, appointment_id: int, update: AppointmentCreate, *, user_id: int
     ) -> Appointment | None:
         pass
 
