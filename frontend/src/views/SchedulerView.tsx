@@ -82,8 +82,14 @@ export default function SchedulerView() {
                 ),
               )
             }
-            slotProps={{ inputLabel: { shrink: true } }}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: { step: 300, dir: "ltr" },
+            }}
           />
+          <Typography color="text.secondary" sx={{ px: { sm: 0.5 } }}>
+            עד
+          </Typography>
           <TextField
             required
             label="עד שעה"
@@ -96,9 +102,15 @@ export default function SchedulerView() {
                 ),
               )
             }
-            slotProps={{ inputLabel: { shrink: true } }}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: { step: 300, dir: "ltr" },
+            }}
           />
-          <Button onClick={() => onChange(value.filter((_, i) => i !== index))}>
+          <Button
+            aria-label={`הסרת טווח ${span.start} עד ${span.end}`}
+            onClick={() => onChange(value.filter((_, i) => i !== index))}
+          >
             הסרה
           </Button>
         </Stack>
@@ -341,7 +353,7 @@ export default function SchedulerView() {
                         : null,
                     )
                   }
-                  helperText="אופציונלי, לפי אזור הזמן של המכשיר"
+                  helperText="אופציונלי. בוחרים לפי השעון המקומי של המכשיר; הזמנים נשמרים כאותה נקודת זמן."
                   slotProps={{ inputLabel: { shrink: true } }}
                 />
               ))}
