@@ -2,6 +2,7 @@ from pydantic import AwareDatetime, BaseModel, Field, field_validator
 
 
 class AppointmentUpdate(BaseModel):
+    notes: str | None = Field(default=None, max_length=2000)
     guests: list[int] | None = None
     location: str | None = Field(default=None, min_length=1)
     start_time: AwareDatetime | None = None

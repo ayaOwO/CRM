@@ -9,6 +9,7 @@ import AppShell from "../components/AppShell";
 import SettingsDialog from "../components/dialogs/SettingsDialog";
 import DashboardView from "../views/DashboardView";
 import ClientsView from "../views/ClientsView";
+import SchedulerView from "../views/SchedulerView";
 import CalendarView from "../views/CalendarView";
 import AppDialogs from "./AppDialogs";
 import useCrmData from "../hooks/useCrmData";
@@ -139,6 +140,7 @@ export default function App({
             editAppointment={editAppointment}
           />
         )}
+        {page === "scheduler" && <SchedulerView />}
       </AppShell>
       <AppDialogs data={data} forms={forms} />
       <SettingsDialog

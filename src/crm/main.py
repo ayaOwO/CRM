@@ -12,8 +12,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from crm.data import SqlContactStore, SqlUserStore
 from crm.data.sql_appointment_store import SqlAppointmentStore
+from crm.data.sql_scheduler_store import SqlSchedulerStore
 from crm.dependencies import get_settings
-from crm.routers import appointments, contacts, credentials, user
+from crm.routers import appointments, contacts, credentials, scheduler, user
 
 
 @asynccontextmanager
@@ -26,6 +27,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.contact_store = SqlContactStore(session_factory)
         app.state.appointment_store = SqlAppointmentStore(session_factory)
         app.state.user_store = SqlUserStore(session_factory)
+        app.state.scheduler_store = SqlSchedulerStore(session_factory)
         yield
     finally:
         await engine.dispose()
@@ -48,13 +50,19 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 app.include_router(contacts.router, dependencies=[Depends(oauth2_scheme)])
 app.include_router(appointments.router, dependencies=[Depends(oauth2_scheme)])
 app.include_router(credentials.router)
+app.include_router(scheduler.router)
 app.include_router(user.router, dependencies=[Depends(oauth2_scheme)])
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_allowed_origins,
     allow_methods=["*"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Booking-Token",
+        "X-Captcha-Token",
+    ],
     allow_credentials=True,
 )
 

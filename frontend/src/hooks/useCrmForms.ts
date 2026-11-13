@@ -115,7 +115,7 @@ export default function useCrmForms({
     if (!appointmentDraft || busy) return;
     setBusy(true);
     setFormError("");
-    const { id, guests, location, start_time, durationMinutes } =
+    const { id, guests, location, start_time, durationMinutes, notes } =
       appointmentDraft;
     const begin = new Date(start_time),
       end = new Date(
@@ -139,6 +139,7 @@ export default function useCrmForms({
         id ? "PATCH" : "POST",
         {
           guests,
+          notes: notes || null,
           location: location.trim(),
           start_time: begin.toISOString(),
           end_time: end.toISOString(),

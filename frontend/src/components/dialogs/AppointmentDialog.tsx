@@ -69,6 +69,18 @@ export default function AppointmentDialog({
             {formError && <Alert severity="error">{formError}</Alert>}
             {appointmentDraft && (
               <>
+                <TextField
+                  label="הערות לפגישה"
+                  multiline
+                  minRows={2}
+                  value={appointmentDraft.notes ?? ""}
+                  onChange={(event) =>
+                    setAppointmentDraft({
+                      ...appointmentDraft,
+                      notes: event.target.value || null,
+                    })
+                  }
+                />
                 <Autocomplete
                   multiple
                   options={contacts}

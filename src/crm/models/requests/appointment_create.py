@@ -5,6 +5,7 @@ from pydantic import AwareDatetime, BaseModel, Field, field_validator, model_val
 
 
 class AppointmentCreate(BaseModel):
+    notes: str | None = Field(default=None, max_length=2000)
     guests: list[int] = Field(default_factory=list)
     location: str = Field(min_length=1)
     start_time: AwareDatetime
